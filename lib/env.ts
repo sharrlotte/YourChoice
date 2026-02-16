@@ -1,3 +1,9 @@
+const AUTH_REQUIRED_ENV_VARS = [
+  "AUTH_SECRET",
+  "AUTH_GOOGLE_ID",
+  "AUTH_GOOGLE_SECRET",
+] as const;
+
 function required(name: string): string {
   const value = process.env[name];
   if (!value) {
@@ -8,6 +14,14 @@ function required(name: string): string {
 
 function optional(name: string): string | undefined {
   return process.env[name] || undefined;
+}
+
+export function getMissingEnvVars(names: readonly string[]): string[] {
+  return names.filter((name) => !process.env[name]);
+}
+
+export function getMissingAuthEnvVars(): string[] {
+  return getMissingEnvVars(AUTH_REQUIRED_ENV_VARS);
 }
 
 export const env = {
