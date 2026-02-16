@@ -1,9 +1,20 @@
 export const dynamic = "force-dynamic";
 
-import { auth, signIn, signOut } from "@/lib/auth";
+import { auth, authConfigError, signIn, signOut } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import { redirect } from "next/navigation";
 
 export default async function Home() {
+  if (authConfigError) {
+    redirect(
+      `/auth/error?error=${encodeURIComponent(
+        authConfigError.code,
+      )}&message=${encodeURIComponent(
+        `${authConfigError.message} ${authConfigError.details.join(", ")}`.trim(),
+      )}`,
+    );
+  }
+
   const session = await auth();
 
   return (
@@ -27,7 +38,15 @@ export default async function Home() {
             <form
               action={async () => {
                 "use server";
-                await signOut({ redirectTo: "/" });
+                try {
+                  await signOut({ redirectTo: "/" });
+                } catch (error) {
+                  const message =
+                    error instanceof Error ? error.message : "Unexpected sign-out error.";
+                  redirect(
+                    `/auth/error?error=SIGNOUT_FAILED&message=${encodeURIComponent(message)}`,
+                  );
+                }
               }}
             >
               <Button type="submit" variant="outline">
@@ -38,7 +57,15 @@ export default async function Home() {
             <form
               action={async () => {
                 "use server";
-                await signIn("google", { redirectTo: "/" });
+                try {
+                  await signIn("google", { redirectTo: "/" });
+                } catch (error) {
+                  const message =
+                    error instanceof Error ? error.message : "Unexpected sign-in error.";
+                  redirect(
+                    `/auth/error?error=SIGNIN_FAILED&message=${encodeURIComponent(message)}`,
+                  );
+                }
               }}
             >
               <Button type="submit">Sign in with Google</Button>
