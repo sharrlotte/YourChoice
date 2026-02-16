@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { auth, signIn, signOut } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 
