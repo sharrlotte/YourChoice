@@ -1,3 +1,9 @@
 import { handlers } from "@/lib/auth";
 
-export const { GET, POST } = handlers;
+const authNotConfigured = () =>
+  new Response("Authentication is not configured.", {
+    status: 500,
+  });
+
+export const GET = handlers?.GET ?? authNotConfigured;
+export const POST = handlers?.POST ?? authNotConfigured;
