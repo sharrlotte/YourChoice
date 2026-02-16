@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { auth, authConfigError, signIn, signOut } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import { getErrorMessage, logServerError } from "@/lib/logger";
 import { redirect } from "next/navigation";
 
 export default async function Home() {
@@ -15,7 +16,19 @@ export default async function Home() {
     );
   }
 
-  const session = await auth();
+  let session;
+
+  try {
+    session = await auth();
+  } catch (error) {
+    logServerError("home.auth", error);
+
+    redirect(
+      `/auth/error?error=${encodeURIComponent("HOME_SESSION_ERROR")}&message=${encodeURIComponent(
+        getErrorMessage(error),
+      )}`,
+    );
+  }
 
   return (
     <main className="container mx-auto max-w-3xl px-6 py-20">
@@ -41,8 +54,8 @@ export default async function Home() {
                 try {
                   await signOut({ redirectTo: "/" });
                 } catch (error) {
-                  const message =
-                    error instanceof Error ? error.message : "Unexpected sign-out error.";
+                  logServerError("home.signOut", error);
+                  const message = getErrorMessage(error);
                   redirect(
                     `/auth/error?error=SIGNOUT_FAILED&message=${encodeURIComponent(message)}`,
                   );
@@ -60,8 +73,8 @@ export default async function Home() {
                 try {
                   await signIn("google", { redirectTo: "/" });
                 } catch (error) {
-                  const message =
-                    error instanceof Error ? error.message : "Unexpected sign-in error.";
+                  logServerError("home.signIn", error);
+                  const message = getErrorMessage(error);
                   redirect(
                     `/auth/error?error=SIGNIN_FAILED&message=${encodeURIComponent(message)}`,
                   );

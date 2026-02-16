@@ -4,6 +4,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import type { Adapter } from "next-auth/adapters";
 import { prisma } from "@/lib/prisma";
 import { getAuthEnvOrThrow, getMissingAuthEnvVars } from "@/lib/env";
+import { logServerError } from "@/lib/logger";
 
 type AuthSetupError = {
   code: "AUTH_CONFIGURATION_ERROR";
@@ -38,12 +39,21 @@ function initAuth(): AuthSetupResult {
   const missingAuthEnvVars = getMissingAuthEnvVars();
 
   if (missingAuthEnvVars.length > 0) {
+    const error = buildAuthSetupError(
+      new Error("Missing required authentication environment variables."),
+      missingAuthEnvVars,
+    );
+
+    logServerError(
+      "auth.init.missing_env",
+      error,
+      { missingAuthEnvVars },
+      { onceKey: `auth.init.missing_env:${missingAuthEnvVars.join(",")}` },
+    );
+
     return {
       status: "error",
-      error: buildAuthSetupError(
-        new Error("Missing required authentication environment variables."),
-        missingAuthEnvVars,
-      ),
+      error,
     };
   }
 
@@ -76,6 +86,8 @@ function initAuth(): AuthSetupResult {
       instance,
     };
   } catch (error) {
+    logServerError("auth.init.nextauth", error, {}, { onceKey: "auth.init.nextauth" });
+
     return {
       status: "error",
       error: buildAuthSetupError(error),
@@ -89,11 +101,14 @@ export const authConfigError =
   authSetup.status === "error" ? authSetup.error : null;
 
 const throwAuthConfigurationError = async () => {
-  throw new Error(
-    authConfigError
-      ? `${authConfigError.message} Details: ${authConfigError.details.join(", ") || "none"}`
-      : "Authentication is not configured.",
-  );
+  const message = authConfigError
+    ? `${authConfigError.message} Details: ${authConfigError.details.join(", ") || "none"}`
+    : "Authentication is not configured.";
+
+  const error = new Error(message);
+  logServerError("auth.throw_config_error", error, { authConfigError });
+
+  throw error;
 };
 
 export const handlers =
