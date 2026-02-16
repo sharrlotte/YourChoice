@@ -3,7 +3,7 @@ import Google from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import type { Adapter } from "next-auth/adapters";
 import { prisma } from "@/lib/prisma";
-import { env, getMissingAuthEnvVars } from "@/lib/env";
+import { getAuthEnvOrThrow, getMissingAuthEnvVars } from "@/lib/env";
 
 type AuthSetupError = {
   code: "AUTH_CONFIGURATION_ERROR";
@@ -52,15 +52,17 @@ function initAuth(): AuthSetupResult {
     : undefined;
 
   try {
+    const authEnv = getAuthEnvOrThrow();
+
     const instance = NextAuth({
       adapter,
       providers: [
         Google({
-          clientId: env.AUTH_GOOGLE_ID,
-          clientSecret: env.AUTH_GOOGLE_SECRET,
+          clientId: authEnv.AUTH_GOOGLE_ID,
+          clientSecret: authEnv.AUTH_GOOGLE_SECRET,
         }),
       ],
-      secret: env.AUTH_SECRET,
+      secret: authEnv.AUTH_SECRET,
       session: {
         strategy: adapter ? "database" : "jwt",
       },
