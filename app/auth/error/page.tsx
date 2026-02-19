@@ -9,6 +9,8 @@ type Props = {
 
 export default async function AuthErrorPage({ searchParams }: Props) {
   const params = await searchParams;
+  const isProduction = process.env.NODE_ENV === "production";
+  const details = isProduction ? null : params?.message;
 
   return (
     <main className="container mx-auto max-w-2xl px-6 py-20">
@@ -23,9 +25,9 @@ export default async function AuthErrorPage({ searchParams }: Props) {
           <p>
             <span className="font-semibold">Error code:</span> {params?.error ?? "Unknown"}
           </p>
-          {params?.message ? (
+          {details ? (
             <p className="mt-2 break-words">
-              <span className="font-semibold">Details:</span> {params.message}
+              <span className="font-semibold">Details:</span> {details}
             </p>
           ) : null}
         </div>
