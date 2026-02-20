@@ -1,7 +1,5 @@
-import NextAuth from "next-auth";
-import Google from "next-auth/providers/google";
-import { PrismaAdapter } from "@auth/prisma-adapter";
-import type { Adapter } from "next-auth/adapters";
+import { betterAuth } from "better-auth";
+import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "@/lib/prisma";
 import { getAuthEnvOrThrow, getMissingAuthEnvVars } from "@/lib/env";
 import { logServerError } from "@/lib/logger";
@@ -15,7 +13,7 @@ type AuthSetupError = {
 type AuthSetupResult =
   | {
       status: "ready";
-      instance: ReturnType<typeof NextAuth>;
+      instance: ReturnType<typeof betterAuth>;
     }
   | {
       status: "error";
@@ -57,27 +55,36 @@ function initAuth(): AuthSetupResult {
     };
   }
 
-  const adapter: Adapter | undefined = prisma
-    ? (PrismaAdapter(prisma) as Adapter)
-    : undefined;
+  if (!prisma) {
+    const error = buildAuthSetupError(
+      new Error("DATABASE_URL is required for Better Auth with Prisma."),
+      ["DATABASE_URL"],
+    );
+
+    return {
+      status: "error",
+      error,
+    };
+  }
 
   try {
     const authEnv = getAuthEnvOrThrow();
 
-    const instance = NextAuth({
-      adapter,
-      providers: [
-        Google({
+    const instance = betterAuth({
+      database: prismaAdapter(prisma, {
+        provider: "postgresql",
+      }),
+      secret: authEnv.AUTH_SECRET,
+      baseURL:
+        process.env.BETTER_AUTH_URL ??
+        process.env.AUTH_URL ??
+        process.env.NEXT_PUBLIC_APP_URL ??
+        "http://localhost:3000/api/auth",
+      socialProviders: {
+        google: {
           clientId: authEnv.AUTH_GOOGLE_ID,
           clientSecret: authEnv.AUTH_GOOGLE_SECRET,
-        }),
-      ],
-      secret: authEnv.AUTH_SECRET,
-      session: {
-        strategy: adapter ? "database" : "jwt",
-      },
-      pages: {
-        error: "/auth/error",
+        },
       },
     });
 
@@ -86,7 +93,7 @@ function initAuth(): AuthSetupResult {
       instance,
     };
   } catch (error) {
-    logServerError("auth.init.nextauth", error, {}, { onceKey: "auth.init.nextauth" });
+    logServerError("auth.init.better_auth", error, {}, { onceKey: "auth.init.better_auth" });
 
     return {
       status: "error",
@@ -97,32 +104,6 @@ function initAuth(): AuthSetupResult {
 
 const authSetup = initAuth();
 
-export const authConfigError =
-  authSetup.status === "error" ? authSetup.error : null;
+export const authConfigError = authSetup.status === "error" ? authSetup.error : null;
 
-const throwAuthConfigurationError = async () => {
-  const message = authConfigError
-    ? `${authConfigError.message} Details: ${authConfigError.details.join(", ") || "none"}`
-    : "Authentication is not configured.";
-
-  const error = new Error(message);
-  logServerError("auth.throw_config_error", error, { authConfigError });
-
-  throw error;
-};
-
-export const handlers =
-  authSetup.status === "ready" ? authSetup.instance.handlers : undefined;
-
-export const signIn =
-  authSetup.status === "ready"
-    ? authSetup.instance.signIn
-    : throwAuthConfigurationError;
-
-export const signOut =
-  authSetup.status === "ready"
-    ? authSetup.instance.signOut
-    : throwAuthConfigurationError;
-
-export const auth =
-  authSetup.status === "ready" ? authSetup.instance.auth : throwAuthConfigurationError;
+export const auth = authSetup.status === "ready" ? authSetup.instance : null;

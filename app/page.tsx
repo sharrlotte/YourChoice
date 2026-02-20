@@ -1,25 +1,30 @@
 export const dynamic = "force-dynamic";
 
-import { auth, authConfigError, signIn, signOut } from "@/lib/auth";
+import { auth, authConfigError } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { getErrorMessage, logServerError } from "@/lib/logger";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 export default async function Home() {
-  if (authConfigError) {
+  if (authConfigError || !auth) {
     redirect(
       `/auth/error?error=${encodeURIComponent(
-        authConfigError.code,
+        authConfigError?.code ?? "AUTH_CONFIGURATION_ERROR",
       )}&message=${encodeURIComponent(
-        `${authConfigError.message} ${authConfigError.details.join(", ")}`.trim(),
+        `${authConfigError?.message ?? "Authentication is not configured."} ${authConfigError?.details?.join(",") ?? ""}`.trim(),
       )}`,
     );
   }
 
+  const authInstance = auth;
+
   let session;
 
   try {
-    session = await auth();
+    session = await authInstance.api.getSession({
+      headers: await headers(),
+    });
   } catch (error) {
     logServerError("home.auth", error);
 
@@ -35,7 +40,7 @@ export default async function Home() {
       <div className="space-y-6 rounded-lg border bg-card p-8 text-card-foreground shadow-sm">
         <h1 className="text-3xl font-bold">Next.js Full Setup ✅</h1>
         <p className="text-muted-foreground">
-          This project includes Next.js, Prisma, Google Auth (NextAuth), env setup,
+          This project includes Next.js, Prisma, Google Auth (Better Auth), env setup,
           shadcn/ui, React Query, and TailwindCSS.
         </p>
 
@@ -52,7 +57,10 @@ export default async function Home() {
               action={async () => {
                 "use server";
                 try {
-                  await signOut({ redirectTo: "/" });
+                  await authInstance.api.signOut({
+                    headers: await headers(),
+                  });
+                  redirect("/");
                 } catch (error) {
                   logServerError("home.signOut", error);
                   const message = getErrorMessage(error);
@@ -71,7 +79,18 @@ export default async function Home() {
               action={async () => {
                 "use server";
                 try {
-                  await signIn("google", { redirectTo: "/" });
+                  const result = await authInstance.api.signInSocial({
+                    body: {
+                      provider: "google",
+                      callbackURL: "/",
+                    },
+                  });
+
+                  if (result?.url) {
+                    redirect(result.url);
+                  }
+
+                  redirect("/");
                 } catch (error) {
                   logServerError("home.signIn", error);
                   const message = getErrorMessage(error);

@@ -5,7 +5,7 @@ A ready-to-go starter with:
 - **Next.js (latest stable)** with App Router + TypeScript
 - **Tailwind CSS**
 - **Prisma**
-- **Google Auth** via NextAuth/Auth.js + Prisma Adapter
+- **Google Auth** via Better Auth + Prisma
 - **Environment variable setup**
 - **shadcn/ui** base configuration + Button component
 - **React Query** with Devtools

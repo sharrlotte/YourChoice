@@ -1,4 +1,5 @@
-import { authConfigError, handlers } from "@/lib/auth";
+import { toNextJsHandler } from "better-auth/next-js";
+import { auth, authConfigError } from "@/lib/auth";
 
 const authNotConfigured = () =>
   Response.json(
@@ -13,5 +14,10 @@ const authNotConfigured = () =>
     },
   );
 
-export const GET = handlers?.GET ?? authNotConfigured;
-export const POST = handlers?.POST ?? authNotConfigured;
+const handler = auth ? toNextJsHandler(auth) : null;
+
+export const GET = handler?.GET ?? authNotConfigured;
+export const POST = handler?.POST ?? authNotConfigured;
+export const PATCH = handler?.PATCH ?? authNotConfigured;
+export const PUT = handler?.PUT ?? authNotConfigured;
+export const DELETE = handler?.DELETE ?? authNotConfigured;
