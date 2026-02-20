@@ -1,12 +1,12 @@
 export const dynamic = "force-dynamic";
 
-import { auth, authConfigError, signIn, signOut } from "@/lib/auth";
+import { auth, authConfigError, authFallbackEnabled, signIn, signOut } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { getErrorMessage, logServerError } from "@/lib/logger";
 import { redirect } from "next/navigation";
 
 export default async function Home() {
-  if (authConfigError) {
+  if (authConfigError && !authFallbackEnabled) {
     redirect(
       `/auth/error?error=${encodeURIComponent(
         authConfigError.code,
