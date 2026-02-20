@@ -24,7 +24,7 @@
     "clsx": "latest",
     "lucide-react": "latest",
     "next": "latest",
-    "next-auth": "latest",
+    "next-auth": "^5.0.0-beta.30",
     "react": "latest",
     "react-dom": "latest",
     "tailwind-merge": "latest"
