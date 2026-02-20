@@ -33,5 +33,5 @@ export function getAuthEnvOrThrow() {
 }
 
 export const env = {
-  DATABASE_URL: optional("DATABASE_URL"),
+  DATABASE_URL: required("DATABASE_URL"),
 };

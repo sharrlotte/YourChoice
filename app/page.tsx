@@ -1,91 +1,79 @@
 export const dynamic = "force-dynamic";
 
-import { auth, authConfigError, authFallbackEnabled, signIn, signOut } from "@/lib/auth";
+import { auth, signIn, signOut } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { getErrorMessage, logServerError } from "@/lib/logger";
 import { redirect } from "next/navigation";
 
+function isRedirectError(error: unknown) {
+	return typeof error === "object" && error !== null && (error as Error).message === "NEXT_REDIRECT";
+}
+
 export default async function Home() {
-  if (authConfigError && !authFallbackEnabled) {
-    redirect(
-      `/auth/error?error=${encodeURIComponent(
-        authConfigError.code,
-      )}&message=${encodeURIComponent(
-        `${authConfigError.message} ${authConfigError.details.join(", ")}`.trim(),
-      )}`,
-    );
-  }
+	let session;
 
-  let session;
+	try {
+		session = await auth();
+	} catch (error) {
+		if (isRedirectError(error)) throw error;
+		logServerError("home.auth", error);
 
-  try {
-    session = await auth();
-  } catch (error) {
-    logServerError("home.auth", error);
+		redirect(`/auth/error?error=${encodeURIComponent("HOME_SESSION_ERROR")}&message=${encodeURIComponent(getErrorMessage(error))}`);
+	}
 
-    redirect(
-      `/auth/error?error=${encodeURIComponent("HOME_SESSION_ERROR")}&message=${encodeURIComponent(
-        getErrorMessage(error),
-      )}`,
-    );
-  }
+	return (
+		<main className="container mx-auto max-w-3xl px-6 py-20">
+			<div className="space-y-6 rounded-lg border bg-card p-8 text-card-foreground shadow-sm">
+				<h1 className="text-3xl font-bold">Next.js Full Setup ✅</h1>
+				<p className="text-muted-foreground">
+					This project includes Next.js, Prisma, Google Auth (NextAuth), env setup, shadcn/ui, React Query, and TailwindCSS.
+				</p>
 
-  return (
-    <main className="container mx-auto max-w-3xl px-6 py-20">
-      <div className="space-y-6 rounded-lg border bg-card p-8 text-card-foreground shadow-sm">
-        <h1 className="text-3xl font-bold">Next.js Full Setup ✅</h1>
-        <p className="text-muted-foreground">
-          This project includes Next.js, Prisma, Google Auth (NextAuth), env setup,
-          shadcn/ui, React Query, and TailwindCSS.
-        </p>
+				<div className="rounded-md bg-muted p-4 text-sm">
+					<p>
+						<span className="font-semibold">Session status:</span>{" "}
+						{session?.user ? `Signed in as ${session.user.email}` : "Not signed in"}
+					</p>
+				</div>
 
-        <div className="rounded-md bg-muted p-4 text-sm">
-          <p>
-            <span className="font-semibold">Session status:</span>{" "}
-            {session?.user ? `Signed in as ${session.user.email}` : "Not signed in"}
-          </p>
-        </div>
-
-        <div className="flex gap-3">
-          {session?.user ? (
-            <form
-              action={async () => {
-                "use server";
-                try {
-                  await signOut({ redirectTo: "/" });
-                } catch (error) {
-                  logServerError("home.signOut", error);
-                  const message = getErrorMessage(error);
-                  redirect(
-                    `/auth/error?error=SIGNOUT_FAILED&message=${encodeURIComponent(message)}`,
-                  );
-                }
-              }}
-            >
-              <Button type="submit" variant="outline">
-                Sign out
-              </Button>
-            </form>
-          ) : (
-            <form
-              action={async () => {
-                "use server";
-                try {
-                  await signIn("google", { redirectTo: "/" });
-                } catch (error) {
-                  logServerError("home.signIn", error);
-                  const message = getErrorMessage(error);
-                  redirect(
-                    `/auth/error?error=SIGNIN_FAILED&message=${encodeURIComponent(message)}`,
-                  );
-                }
-              }}
-            >
-              <Button type="submit">Sign in with Google</Button>
-            </form>
-          )}
-        </div>
-      </div>
-    </main>
-  );
+				<div className="flex gap-3">
+					{session?.user ? (
+						<form
+							action={async () => {
+								"use server";
+								try {
+									await signOut({ redirectTo: "/" });
+								} catch (error) {
+									if (isRedirectError(error)) throw error;
+									logServerError("home.signOut", error);
+									const message = getErrorMessage(error);
+									redirect(`/auth/error?error=SIGNOUT_FAILED&message=${encodeURIComponent(message)}`);
+								}
+							}}
+						>
+							<Button type="submit" variant="outline">
+								Sign out
+							</Button>
+						</form>
+					) : (
+						<form
+							action={async () => {
+								"use server";
+								try {
+									await signIn("google", { redirectTo: "/" });
+								} catch (error) {
+									if (isRedirectError(error)) throw error;
+									logServerError("home.signIn", error);
+									const message = getErrorMessage(error);
+									redirect(`/auth/error?error=SIGNIN_FAILED&message=${encodeURIComponent(message)}`);
+								}
+							}}
+						>
+							<Button type="submit">Sign in with Google</Button>
+						</form>
+					)}
+				</div>
+			</div>
+		</main>
+	);
 }

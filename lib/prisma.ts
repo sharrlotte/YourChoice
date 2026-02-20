@@ -1,35 +1,19 @@
-import type { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
+import { env } from "@/lib/env";
 
-type GlobalForPrisma = {
-  prisma: PrismaClient | undefined;
+const globalForPrisma = globalThis as unknown as {
+	prisma: PrismaClient | undefined;
 };
 
-const globalForPrisma = globalThis as unknown as GlobalForPrisma;
+// Ensure DATABASE_URL is set (via lib/env side effect of accessing env.DATABASE_URL,
+// though importing it might not be enough if it's an object property unless we access it.
+// Actually env.DATABASE_URL calls required() immediately when the object is defined?
+// No, it calls required() at definition time. So just importing it is enough.)
+// But let's be explicit.
+const _ = env.DATABASE_URL;
 
-function createPrismaClient(): PrismaClient {
-  const moduleRef = require("@prisma/client") as {
-    PrismaClient?: new (options?: { log?: string[] }) => PrismaClient;
-  };
+export const prisma = globalForPrisma.prisma ?? new PrismaClient();
 
-  if (!moduleRef.PrismaClient) {
-    throw new Error("PrismaClient export is missing. Did you run `prisma generate`?");
-  }
-
-  return new moduleRef.PrismaClient({
-    log: ["error", "warn"],
-  });
-}
-
-function getPrismaClient(): PrismaClient | undefined {
-  if (!process.env.DATABASE_URL) {
-    return undefined;
-  }
-
-  return createPrismaClient();
-}
-
-export const prisma = globalForPrisma.prisma ?? getPrismaClient();
-
-if (process.env.NODE_ENV !== "production" && prisma) {
-  globalForPrisma.prisma = prisma;
+if (process.env.NODE_ENV !== "production") {
+	globalForPrisma.prisma = prisma;
 }
