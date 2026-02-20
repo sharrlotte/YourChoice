@@ -80,4 +80,8 @@ export function logServerError(
   };
 
   console.error("[server-error]", JSON.stringify(payload));
+
+  if (error instanceof Error) {
+    console.error(error);
+  }
 }
