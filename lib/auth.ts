@@ -18,5 +18,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 		strategy: "jwt",
 	},
 	secret: authEnv.AUTH_SECRET,
+	callbacks: {
+		async session({ session, token }) {
+			if (token.sub && session.user) {
+				session.user.id = token.sub;
+			}
+			if (token.role && session.user) {
+				session.user.role = token.role as any;
+			}
+			return session;
+		},
+		async jwt({ token, user }) {
+			if (user) {
+				token.role = user.role;
+			}
+			return token;
+		},
+	},
 	...authConfig,
 });
