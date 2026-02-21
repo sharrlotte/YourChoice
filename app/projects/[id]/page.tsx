@@ -11,17 +11,6 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
 
 	const session = await auth();
 
-	if (!session?.user) {
-		return (
-			<div className="container mx-auto py-20 text-center">
-				<h1 className="text-2xl font-bold mb-4 text-foreground">Please sign in to view this project.</h1>
-				<a href="/" className="text-primary hover:underline">
-					Go home
-				</a>
-			</div>
-		);
-	}
-
 	const project = await prisma.project.findUnique({
 		where: { id },
 	});
@@ -30,8 +19,8 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
 		notFound();
 	}
 
-	const isDeveloper = session.user.role === Role.DEVELOPER;
-	const isOwner = project.ownerId === session.user.id;
+	const isDeveloper = session?.user.role === Role.DEVELOPER;
+	const isOwner = project.ownerId === session?.user.id;
 	const canManageLabels = isDeveloper || isOwner;
 
 	return (

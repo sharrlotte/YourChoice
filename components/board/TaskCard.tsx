@@ -38,14 +38,16 @@ export function TaskCard({ task, onClick, disabled }: TaskCardProps) {
 		>
 			<CardHeader className="p-3 pb-0 flex flex-row items-start justify-between space-y-0">
 				<h3 className="font-medium text-sm text-foreground pr-4 leading-tight">{task.title}</h3>
-				<button
-					{...attributes}
-					{...listeners}
-					className="opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing p-1 text-muted-foreground hover:text-foreground absolute top-2 right-2"
-					onClick={(e) => e.stopPropagation()}
-				>
-					<GripVertical size={16} />
-				</button>
+				{!disabled && (
+					<button
+						{...attributes}
+						{...listeners}
+						className="opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing p-1 text-muted-foreground hover:text-foreground absolute top-2 right-2"
+						onClick={(e) => e.stopPropagation()}
+					>
+						<GripVertical size={16} />
+					</button>
+				)}
 			</CardHeader>
 
 			<CardContent className="p-3 pt-2">

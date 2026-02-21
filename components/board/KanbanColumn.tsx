@@ -69,7 +69,12 @@ export function KanbanColumn({ projectId, status, title, onTaskClick, sortBy = "
 				{sortBy === "index" ? (
 					<SortableContext items={tasks.map((task) => task.id)} strategy={verticalListSortingStrategy}>
 						{tasks.map((task) => (
-							<TaskCard key={task.id} task={task as TaskWithRelations} onClick={() => onTaskClick?.(task.id)} />
+							<TaskCard
+								key={task.id}
+								task={task as TaskWithRelations}
+								onClick={() => onTaskClick?.(task.id)}
+								disabled={!canManageLabels}
+							/>
 						))}
 					</SortableContext>
 				) : (

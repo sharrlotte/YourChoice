@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@prisma/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Plus, X } from "lucide-react";
-import { useSession } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -21,7 +21,7 @@ export function CreateTaskForm({ projectId, canManageLabels }: { projectId: stri
 	const [isOpen, setIsOpen] = useState(false);
 	const [selectedLabels, setSelectedLabels] = useState<Label[]>([]);
 	const [openCombobox, setOpenCombobox] = useState(false);
-	const { data: session } = useSession();
+	const { data: session, status } = useSession();
 	const queryClient = useQueryClient();
 
 	const { data: labels } = useQuery({
@@ -101,6 +101,22 @@ export function CreateTaskForm({ projectId, canManageLabels }: { projectId: stri
 	const toggleLabel = (label: Label) => {
 		setSelectedLabels((prev) => (prev.some((l) => l.id === label.id) ? prev.filter((l) => l.id !== label.id) : [...prev, label]));
 	};
+
+	if (status === "loading") {
+		return (
+			<Button className="w-full" disabled>
+				Loading...
+			</Button>
+		);
+	}
+
+	if (!session?.user) {
+		return (
+			<Button className="w-full" onClick={() => signIn("google")}>
+				Sign in to create task
+			</Button>
+		);
+	}
 
 	return (
 		<Dialog open={isOpen} onOpenChange={setIsOpen}>
