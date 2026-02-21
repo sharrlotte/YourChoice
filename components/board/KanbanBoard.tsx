@@ -10,6 +10,7 @@ import { createPortal } from "react-dom";
 import { TaskCard } from "./TaskCard";
 import { TaskDetails } from "./TaskDetails";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
 
 const columns: { status: TaskStatus; title: string }[] = [
 	{ status: "PENDING_SUGGESTION", title: "Pending Suggestion" },
@@ -34,10 +35,117 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 	);
 
 	const updateStatusMutation = useMutation({
-		mutationFn: async ({ taskId, status, index }: { taskId: string; status: TaskStatus; index: number }) => {
+		mutationFn: async ({
+			taskId,
+			status,
+			index,
+			overTaskId,
+		}: {
+			taskId: string;
+			status: TaskStatus;
+			index: number;
+			overTaskId?: string;
+		}) => {
 			await updateTaskStatus(taskId, status, index);
 		},
-		onSuccess: () => {
+		onMutate: async ({ taskId, status, index, overTaskId }) => {
+			await queryClient.cancelQueries({ queryKey: ["tasks", projectId] });
+
+			const previousTasks = queryClient.getQueriesData({ queryKey: ["tasks", projectId] });
+
+			// Find and remove task from source
+			let movedTask: any = null;
+
+			queryClient.setQueriesData({ queryKey: ["tasks", projectId] }, (oldData: any) => {
+				if (!oldData || !oldData.pages) return oldData;
+
+				const newPages = oldData.pages.map((page: any[]) => {
+					const found = page.find((t) => t.id === taskId);
+					if (found) {
+						movedTask = found;
+						return page.filter((t) => t.id !== taskId);
+					}
+					return page;
+				});
+
+				return { ...oldData, pages: newPages };
+			});
+
+			// Add to destination
+			if (movedTask) {
+				const updatedTask = { ...movedTask, status: status, index: index };
+
+				queryClient.setQueryData(["tasks", projectId, status, "index"], (oldData: any) => {
+					if (!oldData) {
+						return { pages: [[updatedTask]], pageParams: [1] };
+					}
+
+					const newPages = [...oldData.pages];
+					if (newPages.length === 0) {
+						newPages.push([updatedTask]);
+						return { ...oldData, pages: newPages };
+					}
+
+					// If we have an overTaskId, try to insert relative to it
+					if (overTaskId) {
+						let inserted = false;
+						for (let i = 0; i < newPages.length; i++) {
+							const page = newPages[i];
+							const overIndex = page.findIndex((t: any) => t.id === overTaskId);
+							if (overIndex !== -1) {
+								// Found the page with the overTask
+								const newPage = [...page];
+
+								// Determine if we insert before or after
+								// Since we are sorting by index ASC (low to high)
+								// If we dropped ON a task, dnd-kit logic usually implies we want to take its place.
+								// If moving DOWN (higher index), we insert AFTER.
+								// If moving UP (lower index), we insert BEFORE.
+								// But here we only know overTaskId.
+								// We can check indices.
+								const overTask = page[overIndex];
+
+								// Heuristic: If we are in the same column, we can compare old index.
+								// If different column, we usually insert BEFORE (taking the spot).
+
+								if (movedTask.status === status && movedTask.index < overTask.index) {
+									// Moving down in same column -> Insert AFTER
+									newPage.splice(overIndex + 1, 0, updatedTask);
+								} else {
+									// Moving up or changing column -> Insert BEFORE
+									newPage.splice(overIndex, 0, updatedTask);
+								}
+
+								newPages[i] = newPage;
+								inserted = true;
+								break;
+							}
+						}
+
+						if (!inserted) {
+							// Fallback: Add to start of first page
+							newPages[0] = [updatedTask, ...newPages[0]];
+						}
+					} else {
+						// No overTaskId (dropped on column or empty space), add to start
+						newPages[0] = [updatedTask, ...newPages[0]];
+					}
+
+					return { ...oldData, pages: newPages };
+				});
+			}
+
+			return { previousTasks };
+		},
+		onError: (err, newTodo, context) => {
+			if (context?.previousTasks) {
+				context.previousTasks.forEach(([queryKey, data]) => {
+					queryClient.setQueryData(queryKey, data);
+				});
+			}
+			toast.error("Failed to move task");
+		},
+		onSettled: () => {
 			queryClient.invalidateQueries({ queryKey: ["tasks", projectId] });
 		},
 	});
@@ -60,28 +168,21 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 		// Determine target column and index
 		let targetStatus: TaskStatus;
 		let targetIndex: number;
+		let overTaskId: string | undefined;
 
 		// Check if dropped on a column (empty area) or on a task
 		const isOverColumn = columns.some((col) => col.status === overId);
 
 		if (isOverColumn) {
 			targetStatus = overId as TaskStatus;
-			targetIndex = 0; // Or last? Usually if dropped on column, append to end or start. Let's say 0.
-			// Ideally we should calculate based on position but simple drop on column -> index 0 or length.
-			// If we want accurate index, we need to know where in the list we dropped.
-			// But dnd-kit gives `over` as the container if we use `useDroppable` on container.
-			// If we drop on a task, `over.id` is task id.
+			targetIndex = 0;
 		} else {
 			// Dropped on a task
-			// We need to find the task to get its status and index
-			// But we don't have all tasks in memory easily available here without iterating cache.
-			// We can get data from `over.data.current?.task`.
 			const overTask = over.data.current?.task;
 			if (overTask) {
 				targetStatus = overTask.status;
-				targetIndex = overTask.index; // Insert before or after?
-				// Usually we check if active.rect.top > over.rect.top
-				// For simplicity, let's say we insert at the index of the task we dropped on.
+				targetIndex = overTask.index;
+				overTaskId = overTask.id;
 			} else {
 				// Fallback
 				setActiveTask(null);
@@ -90,7 +191,7 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 		}
 
 		if (activeTask && (activeTask.status !== targetStatus || activeTask.index !== targetIndex)) {
-			updateStatusMutation.mutate({ taskId, status: targetStatus, index: targetIndex });
+			updateStatusMutation.mutate({ taskId, status: targetStatus, index: targetIndex, overTaskId });
 		}
 
 		setActiveTask(null);
@@ -98,7 +199,7 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 
 	return (
 		<div className="flex flex-col h-full">
-			<div className="flex justify-end px-4 py-2 bg-muted/20 border-b">
+			<div className="flex justify-end py-2 bg-muted/20 border-b">
 				<div className="flex items-center gap-2 text-sm text-muted-foreground">
 					<span>Sort by:</span>
 					<Select value={sortBy} onValueChange={(value) => setSortBy(value as "index" | "votes")}>
@@ -121,7 +222,7 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 				// We can check inside handleDragStart or handleDragEnd, or just disable sensors.
 				// Or make items not draggable.
 			>
-				<div className="flex h-full gap-4 overflow-x-auto p-4">
+				<div className="flex h-full gap-4 overflow-x-auto py-4">
 					{columns.map((col) => (
 						<KanbanColumn
 							key={col.status}

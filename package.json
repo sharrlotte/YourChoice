@@ -32,6 +32,7 @@
     "@tanstack/react-query-devtools": "latest",
     "class-variance-authority": "latest",
     "clsx": "latest",
+    "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
     "lucide-react": "latest",
     "next": "latest",

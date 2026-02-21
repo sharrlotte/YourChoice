@@ -34,8 +34,8 @@ export async function getTasks(projectId: string, status: TaskStatus, page: numb
 				where: {
 					userId: userId ?? "undefined",
 					status: status,
-				}
-			}
+				},
+			},
 		},
 		orderBy: orderBy as any,
 		take: ITEMS_PER_PAGE,
@@ -53,6 +53,7 @@ export async function createTask(projectId: string, formData: FormData) {
 
 	const title = formData.get("title") as string;
 	const description = formData.get("description") as string;
+	const labelIds = formData.getAll("labels") as string[];
 
 	if (!title) {
 		throw new Error("Title is required");
@@ -79,6 +80,9 @@ export async function createTask(projectId: string, formData: FormData) {
 			authorId: session.user.id,
 			status: TaskStatus.PENDING_SUGGESTION,
 			index: newIndex,
+			labels: {
+				connect: labelIds.map((id) => ({ id })),
+			},
 		},
 	});
 
@@ -88,17 +92,13 @@ export async function createTask(projectId: string, formData: FormData) {
 	return task;
 }
 
-export async function updateTaskStatus(
-	taskId: string,
-	newStatus: TaskStatus,
-	newIndex: number
-) {
+export async function updateTaskStatus(taskId: string, newStatus: TaskStatus, newIndex: number) {
 	const session = await auth();
-	
+
 	// Allow project owner or developer
 	const task = await prisma.task.findUnique({
 		where: { id: taskId },
-		include: { project: true }
+		include: { project: true },
 	});
 
 	if (!task) {
@@ -124,9 +124,9 @@ export async function updateTaskStatus(
 						where: {
 							projectId: task.projectId,
 							status: oldStatus,
-							index: { gt: oldIndex, lte: newIndex }
+							index: { gt: oldIndex, lte: newIndex },
 						},
-						data: { index: { decrement: 1 } }
+						data: { index: { decrement: 1 } },
 					});
 				} else {
 					// Moved up: Shift items between newIndex and oldIndex-1 DOWN (increment index)
@@ -134,9 +134,9 @@ export async function updateTaskStatus(
 						where: {
 							projectId: task.projectId,
 							status: oldStatus,
-							index: { gte: newIndex, lt: oldIndex }
+							index: { gte: newIndex, lt: oldIndex },
 						},
-						data: { index: { increment: 1 } }
+						data: { index: { increment: 1 } },
 					});
 				}
 			} else {
@@ -146,19 +146,19 @@ export async function updateTaskStatus(
 					where: {
 						projectId: task.projectId,
 						status: oldStatus,
-						index: { gt: oldIndex }
+						index: { gt: oldIndex },
 					},
-					data: { index: { decrement: 1 } }
+					data: { index: { decrement: 1 } },
 				});
-				
+
 				// Make space in new column
 				await tx.task.updateMany({
 					where: {
 						projectId: task.projectId,
 						status: newStatus,
-						index: { gte: newIndex }
+						index: { gte: newIndex },
 					},
-					data: { index: { increment: 1 } }
+					data: { index: { increment: 1 } },
 				});
 			}
 
@@ -183,14 +183,14 @@ export async function updateTaskStatus(
 export async function updateTaskDetails(taskId: string, formData: FormData) {
 	const session = await auth();
 	if (!session?.user) {
-		 throw new Error("Unauthorized");
+		throw new Error("Unauthorized");
 	}
-	
+
 	const task = await prisma.task.findUnique({ where: { id: taskId } });
 	if (!task) throw new Error("Task not found");
-	
+
 	if (session.user.role !== "DEVELOPER" && task.authorId !== session.user.id) {
-			throw new Error("Unauthorized");
+		throw new Error("Unauthorized");
 	}
 
 	const title = formData.get("title") as string;
@@ -227,24 +227,24 @@ export async function getTaskDetails(taskId: string) {
 			reactions: {
 				include: {
 					user: true,
-				}
+				},
 			},
 			votes: {
 				where: {
-					 userId: userId ?? "undefined",
-					 // We also need to check status matches current status
-					 // But `task` is fetched here, so we don't know status beforehand easily
-					 // However, `votes` relation includes `status`.
-					 // So if we filter by userId, we get all votes by user for this task.
-					 // We can filter in JS or just return them.
-					 // Let's return all votes by user for this task, client can check against task.status.
-				}
+					userId: userId ?? "undefined",
+					// We also need to check status matches current status
+					// But `task` is fetched here, so we don't know status beforehand easily
+					// However, `votes` relation includes `status`.
+					// So if we filter by userId, we get all votes by user for this task.
+					// We can filter in JS or just return them.
+					// Let's return all votes by user for this task, client can check against task.status.
+				},
 			},
 			_count: {
 				select: {
 					votes: true,
-				}
-			}
+				},
+			},
 		},
 	});
 

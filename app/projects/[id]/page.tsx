@@ -1,7 +1,5 @@
-import { CreateTaskForm } from "@/components/board/CreateTaskForm";
 import { KanbanBoard } from "@/components/board/KanbanBoard";
 import { UserMenu } from "@/components/layout/UserMenu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Role } from "@prisma/client";

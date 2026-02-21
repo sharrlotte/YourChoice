@@ -1,8 +1,13 @@
 "use client";
 
 import { createComment } from "@/app/actions/comments";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupText,
+  InputGroupTextarea,
+} from "@/components/ui/input-group";
 import { User } from "@prisma/client";
 import { useState, useTransition, useEffect } from "react";
 import { toast } from "sonner";
@@ -50,7 +55,6 @@ export function CommentSection({ taskId, initialComments }: CommentSectionProps)
 	return (
 		<div className="mt-4">
 			<h3 className="font-semibold text-foreground mb-2">Comments</h3>
-
 			<div className="space-y-3 mb-4 max-h-60 overflow-y-auto pr-2">
 				{comments.map((comment) => (
 					<div key={comment.id} className="bg-muted/50 p-2 rounded text-sm">
@@ -64,17 +68,24 @@ export function CommentSection({ taskId, initialComments }: CommentSectionProps)
 				{comments.length === 0 && <p className="text-muted-foreground text-sm">No comments yet.</p>}
 			</div>
 
-			<form onSubmit={handleSubmit} className="flex gap-2">
-				<Input
-					type="text"
-					value={content}
-					onChange={(e) => setContent(e.target.value)}
-					placeholder="Add a comment..."
-					disabled={isPending}
-				/>
-				<Button type="submit" disabled={isPending || !content.trim()} size="sm">
-					{isPending ? "Posting..." : "Post"}
-				</Button>
+			<form onSubmit={handleSubmit} className="mt-2 px-1">
+				<InputGroup>
+					<InputGroupTextarea
+						value={content}
+						onChange={(e) => setContent(e.target.value)}
+						placeholder="Add a comment..."
+						disabled={isPending}
+						maxLength={500}
+					/>
+					<InputGroupAddon align="block-end">
+						<InputGroupText>
+							{content.length}/500
+						</InputGroupText>
+						<InputGroupButton type="submit" disabled={isPending || !content.trim()} size="sm">
+							{isPending ? "Posting..." : "Post"}
+						</InputGroupButton>
+					</InputGroupAddon>
+				</InputGroup>
 			</form>
 		</div>
 	);
