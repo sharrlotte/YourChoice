@@ -1,60 +1,56 @@
 "use client";
 
 import { createTask } from "@/app/actions/tasks";
+import { LabelManager } from "@/components/board/LabelManager";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
-export function CreateTaskForm({ projectId }: { projectId: string }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isPending, startTransition] = useTransition();
+export function CreateTaskForm({ projectId, canManageLabels }: { projectId: string; canManageLabels?: boolean }) {
+	const [isOpen, setIsOpen] = useState(false);
+	const [isPending, startTransition] = useTransition();
 
-  if (!isOpen) {
-    return (
-      <Button onClick={() => setIsOpen(true)}>
-        + New Task
-      </Button>
-    );
-  }
+	const handleSubmit = (formData: FormData) => {
+		startTransition(async () => {
+			try {
+				await createTask(projectId, formData);
+				setIsOpen(false);
+				toast.success("Task created");
+			} catch (error) {
+				console.error("Failed to create task:", error);
+				toast.error("Failed to create task");
+			}
+		});
+	};
 
-  const handleSubmit = (formData: FormData) => {
-    startTransition(async () => {
-      try {
-        await createTask(projectId, formData);
-        setIsOpen(false);
-        toast.success("Task created");
-      } catch (error) {
-        console.error("Failed to create task:", error);
-        toast.error("Failed to create task");
-      }
-    });
-  };
-
-  return (
-    <div className="bg-card p-4 rounded-lg shadow mb-4 border max-w-md">
-      <h3 className="font-semibold mb-2 text-card-foreground">New Task</h3>
-      <form action={handleSubmit} className="space-y-3">
-        <Input
-          name="title"
-          placeholder="Task Title"
-          required
-        />
-        <Textarea
-          name="description"
-          placeholder="Description (optional)"
-          className="h-20"
-        />
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isPending}>
-            {isPending ? "Creating..." : "Create"}
-          </Button>
-        </div>
-      </form>
-    </div>
-  );
+	return (
+		<Dialog open={isOpen} onOpenChange={setIsOpen}>
+			<DialogTrigger asChild>
+				<Button className="w-full">+ New Task</Button>
+			</DialogTrigger>
+			<DialogContent className="sm:max-w-[500px]">
+				<DialogHeader>
+					<div className="flex items-center justify-between pr-8">
+						<DialogTitle>New Task</DialogTitle>
+						{canManageLabels && <LabelManager projectId={projectId} />}
+					</div>
+				</DialogHeader>
+				<form action={handleSubmit} className="space-y-4 mt-4">
+					<Input name="title" placeholder="Task Title" required />
+					<Textarea name="description" placeholder="Description (optional)" className="h-32" />
+					<DialogFooter>
+						<Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>
+							Cancel
+						</Button>
+						<Button type="submit" disabled={isPending}>
+							{isPending ? "Creating..." : "Create"}
+						</Button>
+					</DialogFooter>
+				</form>
+			</DialogContent>
+		</Dialog>
+	);
 }

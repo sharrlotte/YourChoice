@@ -1,7 +1,9 @@
 "use client";
 
 import { getTasks } from "@/app/actions/tasks";
+import { CreateTaskForm } from "@/components/board/CreateTaskForm";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { TaskWithRelations } from "@/types";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
@@ -17,9 +19,10 @@ interface KanbanColumnProps {
 	title: string;
 	onTaskClick?: (taskId: string) => void;
 	sortBy?: "index" | "votes";
+	canManageLabels?: boolean;
 }
 
-export function KanbanColumn({ projectId, status, title, onTaskClick, sortBy = "index" }: KanbanColumnProps) {
+export function KanbanColumn({ projectId, status, title, onTaskClick, sortBy = "index", canManageLabels }: KanbanColumnProps) {
 	const { ref, inView } = useInView();
 
 	const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteQuery({
@@ -57,6 +60,12 @@ export function KanbanColumn({ projectId, status, title, onTaskClick, sortBy = "
 			</div>
 
 			<div ref={setNodeRef} className="flex-1 overflow-y-auto p-2 scrollbar-hide min-h-[100px]">
+				{status === "PENDING_SUGGESTION" && (
+					<div className="mb-2">
+						<CreateTaskForm projectId={projectId} canManageLabels={canManageLabels} />
+					</div>
+				)}
+
 				{sortBy === "index" ? (
 					<SortableContext items={tasks.map((task) => task.id)} strategy={verticalListSortingStrategy}>
 						{tasks.map((task) => (
@@ -69,11 +78,39 @@ export function KanbanColumn({ projectId, status, title, onTaskClick, sortBy = "
 					))
 				)}
 
-				{isLoading && <div className="text-center py-4 text-gray-500 text-sm">Loading...</div>}
-
-				{isFetchingNextPage && <div className="text-center py-2 text-gray-400 text-xs">Loading more...</div>}
+				{(isLoading || isFetchingNextPage) && (
+					<div className="space-y-2">
+						{Array.from({ length: 3 }).map((_, i) => (
+							<TaskSkeleton key={i} index={i} />
+						))}
+					</div>
+				)}
 
 				<div ref={ref} className="h-1" />
+			</div>
+		</div>
+	);
+}
+
+function TaskSkeleton({ index }: { index: number }) {
+	const lines = (index % 3) + 1;
+	return (
+		<div className="mb-2 p-3 bg-card rounded-lg border shadow-sm space-y-3">
+			<div className="space-y-1.5">
+				<Skeleton className="h-4 w-11/12" />
+				{lines > 1 && <Skeleton className="h-4 w-10/12" />}
+				{lines > 2 && <Skeleton className="h-4 w-8/12" />}
+			</div>
+			<div className="flex gap-2 pt-1">
+				<Skeleton className="h-5 w-16 rounded-md" />
+				{(index % 2 === 0) && <Skeleton className="h-5 w-12 rounded-md" />}
+			</div>
+			<div className="flex justify-between items-center pt-2">
+				<Skeleton className="h-3 w-20" />
+				<div className="flex gap-2">
+					<Skeleton className="h-3 w-8" />
+					<Skeleton className="h-3 w-8" />
+				</div>
 			</div>
 		</div>
 	);

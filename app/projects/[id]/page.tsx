@@ -1,6 +1,5 @@
 import { CreateTaskForm } from "@/components/board/CreateTaskForm";
 import { KanbanBoard } from "@/components/board/KanbanBoard";
-import { LabelManager } from "@/components/board/LabelManager";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { auth } from "@/lib/auth";
@@ -8,8 +7,11 @@ import { prisma } from "@/lib/prisma";
 import { Role } from "@prisma/client";
 import { notFound } from "next/navigation";
 
-export default async function ProjectPage({ params }: { params: { id: string } }) {
+export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
+	const { id } = await props.params;
+
 	const session = await auth();
+
 	if (!session?.user) {
 		return (
 			<div className="container mx-auto py-20 text-center">
@@ -22,7 +24,7 @@ export default async function ProjectPage({ params }: { params: { id: string } }
 	}
 
 	const project = await prisma.project.findUnique({
-		where: { id: params.id },
+		where: { id },
 	});
 
 	if (!project) {
@@ -41,14 +43,12 @@ export default async function ProjectPage({ params }: { params: { id: string } }
 					<p className="text-sm text-muted-foreground max-w-xl truncate">{project.description}</p>
 				</div>
 				<div className="flex items-center gap-4">
-					{canManageLabels && <LabelManager projectId={project.id} />}
-					<CreateTaskForm projectId={project.id} />
 					<UserMenu />
 				</div>
 			</header>
 
 			<main className="flex-1 overflow-hidden p-6 bg-muted/20">
-				<KanbanBoard projectId={project.id} />
+				<KanbanBoard projectId={project.id} canManageLabels={canManageLabels} />
 			</main>
 		</div>
 	);

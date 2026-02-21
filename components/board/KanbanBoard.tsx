@@ -19,7 +19,7 @@ const columns: { status: TaskStatus; title: string }[] = [
 	{ status: "COMPLETED", title: "Completed" },
 ];
 
-export function KanbanBoard({ projectId }: { projectId: string }) {
+export function KanbanBoard({ projectId, canManageLabels }: { projectId: string; canManageLabels?: boolean }) {
 	const queryClient = useQueryClient();
 	const [activeTask, setActiveTask] = useState<any>(null);
 	const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -130,6 +130,7 @@ export function KanbanBoard({ projectId }: { projectId: string }) {
 							title={col.title}
 							onTaskClick={(taskId) => setSelectedTaskId(taskId)}
 							sortBy={sortBy}
+							canManageLabels={canManageLabels}
 						/>
 					))}
 				</div>

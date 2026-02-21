@@ -34,8 +34,8 @@ export async function getTasks(projectId: string, status: TaskStatus, page: numb
 				where: {
 					userId: userId ?? "undefined",
 					status: status,
-				},
-			},
+				}
+			}
 		},
 		orderBy: orderBy as any,
 		take: ITEMS_PER_PAGE,
@@ -58,18 +58,18 @@ export async function createTask(projectId: string, formData: FormData) {
 		throw new Error("Title is required");
 	}
 
-	// Get max index for the pending status
-	const maxIndexTask = await prisma.task.findFirst({
+	// Get min index for the pending status to add to top
+	const minIndexTask = await prisma.task.findFirst({
 		where: {
 			projectId,
 			status: TaskStatus.PENDING_SUGGESTION,
 		},
 		orderBy: {
-			index: "desc",
+			index: "asc",
 		},
 	});
 
-	const newIndex = (maxIndexTask?.index ?? -1) + 1;
+	const newIndex = (minIndexTask?.index ?? 0) - 1;
 
 	const task = await prisma.task.create({
 		data: {
@@ -88,19 +88,25 @@ export async function createTask(projectId: string, formData: FormData) {
 	return task;
 }
 
-export async function updateTaskStatus(taskId: string, newStatus: TaskStatus, newIndex: number) {
+export async function updateTaskStatus(
+	taskId: string,
+	newStatus: TaskStatus,
+	newIndex: number
+) {
 	const session = await auth();
-	// Developer role check for moving tasks?
-	if (!session?.user || session.user.role !== "DEVELOPER") {
-		throw new Error("Unauthorized: Only developers can move tasks");
-	}
-
+	
+	// Allow project owner or developer
 	const task = await prisma.task.findUnique({
 		where: { id: taskId },
+		include: { project: true }
 	});
 
 	if (!task) {
 		throw new Error("Task not found");
+	}
+
+	if (!session?.user || (session.user.role !== "DEVELOPER" && task.project.ownerId !== session.user.id)) {
+		throw new Error("Unauthorized: Only project owners or developers can move tasks");
 	}
 
 	const oldStatus = task.status;
@@ -118,9 +124,9 @@ export async function updateTaskStatus(taskId: string, newStatus: TaskStatus, ne
 						where: {
 							projectId: task.projectId,
 							status: oldStatus,
-							index: { gt: oldIndex, lte: newIndex },
+							index: { gt: oldIndex, lte: newIndex }
 						},
-						data: { index: { decrement: 1 } },
+						data: { index: { decrement: 1 } }
 					});
 				} else {
 					// Moved up: Shift items between newIndex and oldIndex-1 DOWN (increment index)
@@ -128,9 +134,9 @@ export async function updateTaskStatus(taskId: string, newStatus: TaskStatus, ne
 						where: {
 							projectId: task.projectId,
 							status: oldStatus,
-							index: { gte: newIndex, lt: oldIndex },
+							index: { gte: newIndex, lt: oldIndex }
 						},
-						data: { index: { increment: 1 } },
+						data: { index: { increment: 1 } }
 					});
 				}
 			} else {
@@ -140,19 +146,19 @@ export async function updateTaskStatus(taskId: string, newStatus: TaskStatus, ne
 					where: {
 						projectId: task.projectId,
 						status: oldStatus,
-						index: { gt: oldIndex },
+						index: { gt: oldIndex }
 					},
-					data: { index: { decrement: 1 } },
+					data: { index: { decrement: 1 } }
 				});
-
+				
 				// Make space in new column
 				await tx.task.updateMany({
 					where: {
 						projectId: task.projectId,
 						status: newStatus,
-						index: { gte: newIndex },
+						index: { gte: newIndex }
 					},
-					data: { index: { increment: 1 } },
+					data: { index: { increment: 1 } }
 				});
 			}
 
@@ -177,14 +183,14 @@ export async function updateTaskStatus(taskId: string, newStatus: TaskStatus, ne
 export async function updateTaskDetails(taskId: string, formData: FormData) {
 	const session = await auth();
 	if (!session?.user) {
-		throw new Error("Unauthorized");
+		 throw new Error("Unauthorized");
 	}
-
+	
 	const task = await prisma.task.findUnique({ where: { id: taskId } });
 	if (!task) throw new Error("Task not found");
-
+	
 	if (session.user.role !== "DEVELOPER" && task.authorId !== session.user.id) {
-		throw new Error("Unauthorized");
+			throw new Error("Unauthorized");
 	}
 
 	const title = formData.get("title") as string;
@@ -221,24 +227,24 @@ export async function getTaskDetails(taskId: string) {
 			reactions: {
 				include: {
 					user: true,
-				},
+				}
 			},
 			votes: {
 				where: {
-					userId: userId ?? "undefined",
-					// We also need to check status matches current status
-					// But `task` is fetched here, so we don't know status beforehand easily
-					// However, `votes` relation includes `status`.
-					// So if we filter by userId, we get all votes by user for this task.
-					// We can filter in JS or just return them.
-					// Let's return all votes by user for this task, client can check against task.status.
-				},
+					 userId: userId ?? "undefined",
+					 // We also need to check status matches current status
+					 // But `task` is fetched here, so we don't know status beforehand easily
+					 // However, `votes` relation includes `status`.
+					 // So if we filter by userId, we get all votes by user for this task.
+					 // We can filter in JS or just return them.
+					 // Let's return all votes by user for this task, client can check against task.status.
+				}
 			},
 			_count: {
 				select: {
 					votes: true,
-				},
-			},
+				}
+			}
 		},
 	});
 

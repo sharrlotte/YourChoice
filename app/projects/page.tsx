@@ -31,8 +31,12 @@ export default async function ProjectsPage() {
 
 			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 				{projects.map((project) => (
-					<Link key={project.id} href={`/projects/${project.id}`} className="block group">
-						<Card className="h-full hover:shadow-md transition-shadow group-hover:border-primary/50">
+					<Link
+						key={project.id}
+						href={`/projects/${project.id}`}
+						className="block group focus:outline-none focus:ring-2 focus:ring-primary rounded-lg"
+					>
+						<Card className="h-full border-2 border-muted hover:border-primary/50 shadow-sm hover:shadow-md transition-all group-hover:border-primary/50">
 							<CardHeader>
 								<CardTitle className="text-xl">{project.name}</CardTitle>
 								<CardDescription className="line-clamp-2 h-10">{project.description || "No description"}</CardDescription>

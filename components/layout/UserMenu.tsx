@@ -10,11 +10,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
 import { LogOut } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 
 export function UserMenu() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+
+  if (status === "loading") {
+    return <Skeleton className="h-8 w-8 rounded-full" />;
+  }
 
   if (!session?.user) return null;
 
