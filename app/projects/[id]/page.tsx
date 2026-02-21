@@ -1,5 +1,6 @@
 import { KanbanBoard } from "@/components/board/KanbanBoard";
 import { UserMenu } from "@/components/layout/UserMenu";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Role } from "@prisma/client";
@@ -41,6 +42,7 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
 					<p className="text-sm text-muted-foreground max-w-xl truncate">{project.description}</p>
 				</div>
 				<div className="flex items-center gap-4">
+					<ThemeToggle />
 					<UserMenu />
 				</div>
 			</header>

@@ -5,7 +5,7 @@ import { KanbanColumn } from "@/components/board/KanbanColumn";
 import { TaskStatus } from "@prisma/client";
 import { DndContext, DragEndEvent, DragOverlay, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { TaskCard } from "./TaskCard";
 import { TaskDetails } from "./TaskDetails";
@@ -25,6 +25,11 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 	const [activeTask, setActiveTask] = useState<any>(null);
 	const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 	const [sortBy, setSortBy] = useState<"index" | "votes">("index");
+	const [mounted, setMounted] = useState(false);
+
+	useEffect(() => {
+		setMounted(true);
+	}, []);
 
 	const sensors = useSensors(
 		useSensor(PointerSensor, {
@@ -236,7 +241,7 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 					))}
 				</div>
 
-				{createPortal(<DragOverlay>{activeTask ? <TaskCard task={activeTask} /> : null}</DragOverlay>, document.body)}
+				{mounted && createPortal(<DragOverlay>{activeTask ? <TaskCard task={activeTask} /> : null}</DragOverlay>, document.body)}
 
 				{selectedTaskId && <TaskDetails taskId={selectedTaskId} onClose={() => setSelectedTaskId(null)} />}
 			</DndContext>

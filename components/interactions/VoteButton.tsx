@@ -50,18 +50,13 @@ export function VoteButton({ taskId, initialVotes, initialHasVoted, taskStatus }
 
 	return (
 		<Button
-			variant="outline"
+			variant={hasVoted ? "secondary" : "outline"}
 			size="sm"
 			onClick={(e) => {
 				e.stopPropagation();
 				handleVote();
 			}}
 			disabled={isPending || !isVotingEnabled}
-			className={cn(
-				"flex items-center gap-1",
-				hasVoted && "text-blue-600 bg-blue-50 hover:bg-blue-100 border-blue-200",
-				!isVotingEnabled && "opacity-50 cursor-not-allowed"
-			)}
 		>
 			<ThumbsUp size={14} className={cn(hasVoted && "fill-current")} />
 			<span>{votes}</span>

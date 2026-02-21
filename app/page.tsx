@@ -4,6 +4,7 @@ import { createProject } from "@/app/actions/projects";
 import { ProjectCard } from "@/components/board/ProjectCard";
 import { CreateProjectDialog } from "@/components/board/CreateProjectDialog";
 import { UserMenu } from "@/components/layout/UserMenu";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { auth, signIn } from "@/lib/auth";
 import { getErrorMessage, logServerError } from "@/lib/logger";
@@ -36,26 +37,30 @@ export default async function Home() {
 
 				{session?.user ? (
 					<div className="flex items-center gap-4">
+						<ThemeToggle />
 						<UserMenu />
 					</div>
 				) : (
-					<form
-						action={async () => {
-							"use server";
-							try {
-								await signIn("google", { redirectTo: "/" });
-							} catch (error) {
-								if (isRedirectError(error)) throw error;
-								logServerError("home.signIn", error);
-								const message = getErrorMessage(error);
-								redirect(`/auth/error?error=SIGNIN_FAILED&message=${encodeURIComponent(message)}`);
-							}
-						}}
-					>
-						<Button type="submit" size="sm">
-							Sign in with Google
-						</Button>
-					</form>
+					<div className="flex items-center gap-4">
+						<ThemeToggle />
+						<form
+							action={async () => {
+								"use server";
+								try {
+									await signIn("google", { redirectTo: "/" });
+								} catch (error) {
+									if (isRedirectError(error)) throw error;
+									logServerError("home.signIn", error);
+									const message = getErrorMessage(error);
+									redirect(`/auth/error?error=SIGNIN_FAILED&message=${encodeURIComponent(message)}`);
+								}
+							}}
+						>
+							<Button type="submit" size="sm">
+								Sign in with Google
+							</Button>
+						</form>
+					</div>
 				)}
 			</header>
 

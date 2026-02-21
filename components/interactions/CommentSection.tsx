@@ -102,7 +102,7 @@ export function CommentSection({ taskId }: CommentSectionProps) {
 	return (
 		<div className="mt-4 flex flex-col h-full max-h-[500px]">
 			<h3 className="font-semibold text-foreground mb-2">Comments</h3>
-			<form onSubmit={handleSubmit} className="mt-auto px-1 pt-2 border-t">
+			<form onSubmit={handleSubmit} className="mt-auto py-2 border-t">
 				<InputGroup>
 					<InputGroupTextarea
 						value={content}
@@ -119,7 +119,7 @@ export function CommentSection({ taskId }: CommentSectionProps) {
 					</InputGroupAddon>
 				</InputGroup>
 			</form>
-			<div className="flex-1 overflow-y-auto pr-2 space-y-3 mb-4 min-h-[100px]">
+			<div className="flex-1 overflow-y-auto pr-2 space-y-2 mb-4 min-h-[100px]">
 				{status === "pending" ? (
 					<div className="flex justify-center py-4">
 						<Loader2 className="animate-spin text-muted-foreground" size={20} />
