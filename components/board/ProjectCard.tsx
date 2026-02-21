@@ -18,9 +18,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
 					<div className="flex justify-between items-start">
 						<CardTitle className="text-lg truncate pr-2 font-semibold tracking-tight">{project.name}</CardTitle>
 					</div>
-					<CardDescription className="line-clamp-2 text-xs text-muted-foreground/80 mt-1">
-						{project.description || "No description provided"}
-					</CardDescription>
+					<CardDescription className="line-clamp-2 text-xs text-muted-foreground/80 mt-1">{project.description}</CardDescription>
 				</CardHeader>
 				<div className="flex-1" />
 				<CardFooter className="flex justify-between items-center p-4 pt-0">

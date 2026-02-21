@@ -39,7 +39,7 @@ export default async function ProjectsPage() {
 						<Card className="h-full border-2 border-muted hover:border-primary/50 shadow-sm hover:shadow-md transition-all group-hover:border-primary/50">
 							<CardHeader>
 								<CardTitle className="text-xl">{project.name}</CardTitle>
-								<CardDescription className="line-clamp-2 h-10">{project.description || "No description"}</CardDescription>
+								<CardDescription className="line-clamp-2 h-10">{project.description}</CardDescription>
 							</CardHeader>
 							<CardFooter className="flex justify-between text-sm text-muted-foreground">
 								<span>{project._count.tasks} tasks</span>
