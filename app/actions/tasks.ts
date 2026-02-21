@@ -216,12 +216,9 @@ export async function getTaskDetails(taskId: string) {
 		include: {
 			author: true,
 			labels: true,
-			comments: {
-				include: {
-					author: true,
-				},
-				orderBy: {
-					createdAt: "desc",
+			project: {
+				select: {
+					ownerId: true,
 				},
 			},
 			reactions: {

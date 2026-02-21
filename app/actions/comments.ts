@@ -5,6 +5,34 @@ import { eventPublisher } from "@/lib/events";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
+const COMMENTS_PER_PAGE = 10;
+
+export async function getComments(taskId: string, cursor?: string) {
+  const comments = await prisma.comment.findMany({
+    where: { taskId },
+    include: {
+      author: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    take: COMMENTS_PER_PAGE + 1, // Fetch one more to check for next page
+    cursor: cursor ? { id: cursor } : undefined,
+    skip: cursor ? 1 : 0,
+  });
+
+  let nextCursor: string | undefined = undefined;
+  if (comments.length > COMMENTS_PER_PAGE) {
+    const nextItem = comments.pop();
+    nextCursor = nextItem?.id;
+  }
+
+  return {
+    comments,
+    nextCursor,
+  };
+}
+
 export async function createComment(taskId: string, formData: FormData) {
   const session = await auth();
   if (!session?.user) {
@@ -29,6 +57,9 @@ export async function createComment(taskId: string, formData: FormData) {
       content,
       taskId,
       authorId: session.user.id,
+    },
+    include: {
+      author: true,
     },
   });
 

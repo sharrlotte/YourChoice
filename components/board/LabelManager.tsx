@@ -70,7 +70,7 @@ export function LabelManager({ projectId }: LabelManagerProps) {
 				<div className="space-y-4">
 					<h4 className="font-medium leading-none">Project Labels</h4>
 
-					<div className="flex flex-wrap gap-2 min-h-[40px]">
+					<div className="flex flex-wrap gap-2">
 						{labels?.map((label) => (
 							<Badge key={label.id} variant="secondary" style={{ backgroundColor: label.color, color: "#fff" }}>
 								{label.name}
