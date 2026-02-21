@@ -58,19 +58,28 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 
 			const previousTasks = queryClient.getQueriesData({ queryKey: ["tasks", projectId] });
 
-			// Find and remove task from source
 			let movedTask: any = null;
 
+			// Find the task first to ensure we have it before modifications
+			for (const [, data] of previousTasks) {
+				if ((data as any)?.pages) {
+					for (const page of (data as any).pages) {
+						const found = page.find((t: any) => t.id === taskId);
+						if (found) {
+							movedTask = found;
+							break;
+						}
+					}
+				}
+				if (movedTask) break;
+			}
+
+			// Remove from all lists
 			queryClient.setQueriesData({ queryKey: ["tasks", projectId] }, (oldData: any) => {
 				if (!oldData || !oldData.pages) return oldData;
 
 				const newPages = oldData.pages.map((page: any[]) => {
-					const found = page.find((t) => t.id === taskId);
-					if (found) {
-						movedTask = found;
-						return page.filter((t) => t.id !== taskId);
-					}
-					return page;
+					return page.filter((t) => t.id !== taskId);
 				});
 
 				return { ...oldData, pages: newPages };
@@ -101,20 +110,11 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 								// Found the page with the overTask
 								const newPage = [...page];
 
-								// Determine if we insert before or after
-								// Since we are sorting by index ASC (low to high)
-								// If we dropped ON a task, dnd-kit logic usually implies we want to take its place.
-								// If moving DOWN (higher index), we insert AFTER.
-								// If moving UP (lower index), we insert BEFORE.
-								// But here we only know overTaskId.
-								// We can check indices.
-								const overTask = page[overIndex];
-
-								// Heuristic: If we are in the same column, we can compare old index.
-								// If different column, we usually insert BEFORE (taking the spot).
-
-								if (movedTask.status === status && movedTask.index < overTask.index) {
+								if (movedTask.status === status && movedTask.index < index) {
 									// Moving down in same column -> Insert AFTER
+									// Note: using 'index' (targetIndex) here might be safer than overTask.index if overTask isn't reliable
+									// But overTaskId logic relies on overTask position.
+									// If movedTask.index < overTask.index (we are moving down), we insert after.
 									newPage.splice(overIndex + 1, 0, updatedTask);
 								} else {
 									// Moving up or changing column -> Insert BEFORE
@@ -227,7 +227,7 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 				// We can check inside handleDragStart or handleDragEnd, or just disable sensors.
 				// Or make items not draggable.
 			>
-				<div className="flex h-full gap-4 overflow-x-auto py-4">
+				<div className="flex h-full gap-4 overflow-x-auto py-4 w-full">
 					{columns.map((col) => (
 						<KanbanColumn
 							key={col.status}
