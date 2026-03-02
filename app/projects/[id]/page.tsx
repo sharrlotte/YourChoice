@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Role } from "@prisma/client";
 import { notFound } from "next/navigation";
+import { SelectIcon } from "@radix-ui/react-select";
 
 export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
 	const { id } = await props.params;
@@ -25,12 +26,13 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
 
 	return (
 		<div className="h-screen flex flex-col overflow-hidden bg-background">
-			<header className="bg-card border-b px-6 py-4 flex justify-between items-center shadow-sm z-10">
+			<header className="bg-card border-b px-6 py-4 flex items-center shadow-sm z-10 gap-2">
+				<SelectIcon />
 				<div>
 					<h1 className="text-xl font-bold text-foreground">{project.name}</h1>
 					<p className="text-sm text-muted-foreground max-w-xl truncate">{project.description}</p>
 				</div>
-				<div className="flex items-center gap-4">
+				<div className="flex items-center gap-4 ml-auto">
 					<ThemeToggle />
 					<UserMenu />
 				</div>

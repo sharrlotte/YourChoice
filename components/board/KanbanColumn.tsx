@@ -18,17 +18,16 @@ interface KanbanColumnProps {
 	status: TaskStatus;
 	title: string;
 	onTaskClick?: (taskId: string) => void;
-	sortBy?: "index" | "votes";
 	canManageLabels?: boolean;
 }
 
-export function KanbanColumn({ projectId, status, title, onTaskClick, sortBy = "index", canManageLabels }: KanbanColumnProps) {
+export function KanbanColumn({ projectId, status, title, onTaskClick, canManageLabels }: KanbanColumnProps) {
 	const { ref, inView } = useInView();
 
 	const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteQuery({
-		queryKey: ["tasks", projectId, status, sortBy],
+		queryKey: ["tasks", projectId, status, "index"],
 		queryFn: async ({ pageParam = 1 }) => {
-			return getTasks(projectId, status, pageParam, sortBy);
+			return getTasks(projectId, status, pageParam);
 		},
 		getNextPageParam: (lastPage, allPages) => {
 			// Assuming page size is 10
@@ -39,7 +38,6 @@ export function KanbanColumn({ projectId, status, title, onTaskClick, sortBy = "
 
 	const { setNodeRef } = useDroppable({
 		id: status,
-		disabled: sortBy === "votes",
 	});
 
 	useEffect(() => {
@@ -51,7 +49,7 @@ export function KanbanColumn({ projectId, status, title, onTaskClick, sortBy = "
 	const tasks = data?.pages.flatMap((page) => page) ?? [];
 
 	return (
-		<div className="flex flex-col bg-muted/50 rounded-lg w-80 min-w-80 h-full max-h-screen border">
+		<div className="flex flex-col bg-muted/50 rounded-lg w-full min-w-80 h-full max-h-screen border">
 			<div className="p-3 font-semibold text-foreground border-b bg-card rounded-t-lg sticky top-0 z-10 flex justify-between items-center shadow-sm">
 				<h2 className="text-sm">{title}</h2>
 				<Badge variant="secondary" className="px-2 py-0.5 rounded-full text-xs">
@@ -66,22 +64,16 @@ export function KanbanColumn({ projectId, status, title, onTaskClick, sortBy = "
 					</div>
 				)}
 
-				{sortBy === "index" ? (
-					<SortableContext items={tasks.map((task) => task.id)} strategy={verticalListSortingStrategy}>
-						{tasks.map((task) => (
-							<TaskCard
-								key={task.id}
-								task={task as TaskWithRelations}
-								onClick={() => onTaskClick?.(task.id)}
-								disabled={!canManageLabels}
-							/>
-						))}
-					</SortableContext>
-				) : (
-					tasks.map((task) => (
-						<TaskCard key={task.id} task={task as TaskWithRelations} onClick={() => onTaskClick?.(task.id)} disabled />
-					))
-				)}
+				<SortableContext items={tasks.map((task) => task.id)} strategy={verticalListSortingStrategy}>
+					{tasks.map((task) => (
+						<TaskCard
+							key={task.id}
+							task={task as TaskWithRelations}
+							onClick={() => onTaskClick?.(task.id)}
+							disabled={!canManageLabels}
+						/>
+					))}
+				</SortableContext>
 				<div ref={ref} className="h-1" />
 			</div>
 		</div>

@@ -29,13 +29,6 @@ Status changes are handled via drag-and-drop on the Kanban board.
 
 Infinite loading is implemented **per column**, meaning each status column loads tasks independently as the user scrolls.
 
-### Sorting
-
-Tasks within each column can be sorted by:
-
-- Number of votes (descending)
-- Creation date
-
 ---
 
 ## User Role

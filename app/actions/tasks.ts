@@ -8,13 +8,11 @@ import { revalidatePath } from "next/cache";
 
 const ITEMS_PER_PAGE = 10;
 
-export async function getTasks(projectId: string, status: TaskStatus, page: number = 1, sortBy: "index" | "votes" = "index") {
+export async function getTasks(projectId: string, status: TaskStatus, page: number = 1) {
 	const session = await auth();
 	const userId = session?.user?.id;
 
 	const skip = (page - 1) * ITEMS_PER_PAGE;
-
-	const orderBy = sortBy === "votes" ? { votes: { _count: "desc" } } : { index: "asc" };
 
 	const tasks = await prisma.task.findMany({
 		where: {
@@ -37,7 +35,7 @@ export async function getTasks(projectId: string, status: TaskStatus, page: numb
 				},
 			},
 		},
-		orderBy: orderBy as any,
+		orderBy: { index: "asc" },
 		take: ITEMS_PER_PAGE,
 		skip,
 	});
@@ -70,7 +68,7 @@ export async function createTask(projectId: string, formData: FormData) {
 		},
 	});
 
-	const newIndex = (minIndexTask?.index ?? 0) - 1;
+	const newIndex = minIndexTask ? minIndexTask.index / 2 : 1000;
 
 	const task = await prisma.task.create({
 		data: {
@@ -114,62 +112,12 @@ export async function updateTaskStatus(taskId: string, newStatus: TaskStatus, ne
 
 	// If status changed or index changed
 	if (oldStatus !== newStatus || oldIndex !== newIndex) {
-		await prisma.$transaction(async (tx) => {
-			// 1. Remove from old column (close gap)
-			if (oldStatus === newStatus) {
-				// Moving within same column
-				if (oldIndex < newIndex) {
-					// Moved down: Shift items between oldIndex+1 and newIndex UP (decrement index)
-					await tx.task.updateMany({
-						where: {
-							projectId: task.projectId,
-							status: oldStatus,
-							index: { gt: oldIndex, lte: newIndex },
-						},
-						data: { index: { decrement: 1 } },
-					});
-				} else {
-					// Moved up: Shift items between newIndex and oldIndex-1 DOWN (increment index)
-					await tx.task.updateMany({
-						where: {
-							projectId: task.projectId,
-							status: oldStatus,
-							index: { gte: newIndex, lt: oldIndex },
-						},
-						data: { index: { increment: 1 } },
-					});
-				}
-			} else {
-				// Moving to different column
-				// Close gap in old column
-				await tx.task.updateMany({
-					where: {
-						projectId: task.projectId,
-						status: oldStatus,
-						index: { gt: oldIndex },
-					},
-					data: { index: { decrement: 1 } },
-				});
-
-				// Make space in new column
-				await tx.task.updateMany({
-					where: {
-						projectId: task.projectId,
-						status: newStatus,
-						index: { gte: newIndex },
-					},
-					data: { index: { increment: 1 } },
-				});
-			}
-
-			// Update the task
-			await tx.task.update({
-				where: { id: taskId },
-				data: {
-					status: newStatus,
-					index: newIndex,
-				},
-			});
+		await prisma.task.update({
+			where: { id: taskId },
+			data: {
+				status: newStatus,
+				index: newIndex,
+			},
 		});
 
 		if (oldStatus !== newStatus) {

@@ -9,7 +9,6 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { TaskCard } from "./TaskCard";
 import { TaskDetails } from "./TaskDetails";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
 const columns: { status: TaskStatus; title: string }[] = [
@@ -24,7 +23,6 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 	const queryClient = useQueryClient();
 	const [activeTask, setActiveTask] = useState<any>(null);
 	const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-	const [sortBy, setSortBy] = useState<"index" | "votes">("index");
 	const [mounted, setMounted] = useState(false);
 
 	useEffect(() => {
@@ -204,28 +202,10 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 
 	return (
 		<div className="flex flex-col h-full">
-			<div className="flex justify-end py-2 bg-muted/20 border-b">
-				<div className="flex items-center gap-2 text-sm text-muted-foreground">
-					<span>Sort by:</span>
-					<Select value={sortBy} onValueChange={(value) => setSortBy(value as "index" | "votes")}>
-						<SelectTrigger className="w-[140px] h-8">
-							<SelectValue placeholder="Sort by" />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="index">Manual Order</SelectItem>
-							<SelectItem value="votes">Most Votes</SelectItem>
-						</SelectContent>
-					</Select>
-				</div>
-			</div>
-
 			<DndContext
 				sensors={sensors}
 				onDragStart={handleDragStart}
 				onDragEnd={handleDragEnd}
-				// Disable drag if sorting by votes?
-				// We can check inside handleDragStart or handleDragEnd, or just disable sensors.
-				// Or make items not draggable.
 			>
 				<div className="flex h-full gap-4 overflow-x-auto py-4 w-full">
 					{columns.map((col) => (
@@ -235,7 +215,6 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 							status={col.status}
 							title={col.title}
 							onTaskClick={(taskId) => setSelectedTaskId(taskId)}
-							sortBy={sortBy}
 							canManageLabels={canManageLabels}
 						/>
 					))}

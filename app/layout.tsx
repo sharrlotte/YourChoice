@@ -3,25 +3,25 @@ import "./globals.css";
 import { Providers } from "@/components/providers/providers";
 
 export const metadata: Metadata = {
-  title: "Next.js Full Setup",
-  description: "Next.js + Prisma + Google Auth + shadcn/ui + React Query starter",
+	title: "Your Choice",
+	description: "Your choice",
 };
 
 import { Toaster } from "sonner";
 
 export default function RootLayout({
-  children,
+	children,
 }: Readonly<{
-  children: React.ReactNode;
+	children: React.ReactNode;
 }>) {
-  return (
-    <html lang="en">
-      <body>
-        <Providers>
-          {children}
-          <Toaster richColors position="top-right" />
-        </Providers>
-      </body>
-    </html>
-  );
+	return (
+		<html lang="en" suppressHydrationWarning>
+			<body>
+				<Providers>
+					{children}
+					<Toaster richColors position="top-right" />
+				</Providers>
+			</body>
+		</html>
+	);
 }

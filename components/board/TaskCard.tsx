@@ -33,7 +33,7 @@ export function TaskCard({ task, onClick, disabled }: TaskCardProps) {
 		<Card
 			ref={setNodeRef}
 			style={style}
-			className="mb-2 group relative hover:shadow-md transition-shadow cursor-pointer border-l-4 border-l-primary"
+			className="mb-2 group relative hover:shadow-md transition-shadow cursor-pointer border-l-4 border-l-primary select-none"
 			onClick={onClick}
 		>
 			<CardHeader className="p-3 pb-0 flex flex-row items-start justify-between space-y-0">
@@ -49,7 +49,6 @@ export function TaskCard({ task, onClick, disabled }: TaskCardProps) {
 					</button>
 				)}
 			</CardHeader>
-
 			<CardContent className="p-3 pt-2">
 				<div className="flex flex-wrap gap-1">
 					{task.labels.map((label) => (
