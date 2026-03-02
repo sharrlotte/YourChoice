@@ -103,11 +103,7 @@ export function CreateTaskForm({ projectId, canManageLabels }: { projectId: stri
 	};
 
 	if (status === "loading") {
-		return (
-			<Button className="w-full" disabled>
-				Loading...
-			</Button>
-		);
+		return <Button className="w-full"></Button>;
 	}
 
 	if (!session?.user) {
