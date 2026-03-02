@@ -2,7 +2,7 @@
 
 import { createComment, getComments } from "@/app/actions/comments";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupText, InputGroupTextarea } from "@/components/ui/input-group";
-import { User } from "@prisma/client";
+import { User } from "@/app/generated/prisma";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";

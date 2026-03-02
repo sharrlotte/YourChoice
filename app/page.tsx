@@ -8,7 +8,7 @@ import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { auth, signIn } from "@/lib/auth";
 import { getErrorMessage, logServerError } from "@/lib/logger";
-import { prisma } from "@/lib/prisma";
+import prisma from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { LayoutGrid } from "lucide-react";
 import { GITHUB_REPO_URL, DISCORD_INVITE_URL } from "@/lib/constants";

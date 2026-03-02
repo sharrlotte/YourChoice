@@ -3,8 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { Role } from "@prisma/client";
+import prisma from "@/lib/prisma";
+import { Role } from "@/app/generated/prisma";
 import Link from "next/link";
 
 export default async function ProjectsPage() {

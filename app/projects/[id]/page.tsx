@@ -2,8 +2,8 @@ import { KanbanBoard } from "@/components/board/KanbanBoard";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { Role } from "@prisma/client";
+import prisma from "@/lib/prisma";
+import { Role } from "@/app/generated/prisma";
 import { notFound } from "next/navigation";
 import { SelectIcon } from "@radix-ui/react-select";
 

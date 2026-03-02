@@ -3,7 +3,7 @@
 import { toggleReaction } from "@/app/actions/reactions";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Reaction, User } from "@prisma/client";
+import { Reaction, User } from "@/app/generated/prisma";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { useState, useTransition } from "react";

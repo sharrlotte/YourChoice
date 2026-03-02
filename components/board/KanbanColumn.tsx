@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { TaskWithRelations } from "@/types";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { TaskStatus } from "@prisma/client";
+import { TaskStatus } from "@/app/generated/prisma";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useInView } from "react-intersection-observer";

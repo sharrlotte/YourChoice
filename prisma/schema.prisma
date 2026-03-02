@@ -1,5 +1,6 @@
 generator client {
     provider = "prisma-client-js"
+    output   = "../app/generated/prisma"
 }
 
 datasource db {
@@ -18,7 +19,7 @@ model User {
     sessions      Session[]
 
     // Relations
-    projects  Project[] // Projects owned by the user (developer)
+    projects  Project[]
     tasks     Task[] // Tasks created by the user
     comments  Comment[]
     votes     Vote[]
@@ -49,7 +50,7 @@ model Task {
     title       String
     description String?
     status      TaskStatus @default(PENDING_SUGGESTION)
-    index       Float        @default(0)
+    index       Float      @default(0)
     projectId   String
     project     Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
     authorId    String

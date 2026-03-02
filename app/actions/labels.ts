@@ -1,8 +1,8 @@
 "use server";
 
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { Role } from "@prisma/client";
+import prisma from "@/lib/prisma";
+import { Role } from "@/app/generated/prisma";
 import { revalidatePath } from "next/cache";
 
 export async function getLabels(projectId: string) {

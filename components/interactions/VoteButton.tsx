@@ -1,6 +1,6 @@
 "use client";
 
-import { TaskStatus } from "@prisma/client";
+import { TaskStatus } from "@/app/generated/prisma";
 import { toggleVote } from "@/app/actions/votes";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -8,14 +8,7 @@ import { ThumbsUp } from "lucide-react";
 import { toast } from "sonner";
 import { useState, useTransition, useEffect } from "react";
 import { useSession, signIn } from "next-auth/react";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface VoteButtonProps {
 	taskId: string;

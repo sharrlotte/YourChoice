@@ -1,9 +1,9 @@
 "use server";
 
+import { TaskStatus } from "@/app/generated/prisma";
 import { auth } from "@/lib/auth";
 import { eventPublisher } from "@/lib/events";
-import { prisma } from "@/lib/prisma";
-import { TaskStatus } from "@prisma/client";
+import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
 const ITEMS_PER_PAGE = 10;
