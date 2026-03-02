@@ -3,7 +3,7 @@
 import { updateTaskStatus } from "@/app/actions/tasks";
 import { KanbanColumn } from "@/components/board/KanbanColumn";
 import { TaskStatus } from "@/app/generated/prisma";
-import { DndContext, DragEndEvent, DragOverlay, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { DndContext, DragEndEvent, DragOverlay, DragOverEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -98,6 +98,80 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 		setActiveTask(event.active.data.current?.task);
 	};
 
+	const handleDragOver = (event: DragOverEvent) => {
+		const { active, over } = event;
+		if (!over) return;
+
+		const activeId = active.id;
+		const overId = over.id;
+
+		// Find the containers
+		const activeData = active.data.current;
+		const overData = over.data.current;
+
+		if (!activeData || !overData) return;
+
+		const activeTask = activeData.task;
+		const overTask = overData.task;
+
+		if (!activeTask) return;
+
+		const activeStatus = activeTask.status;
+		let overStatus = overTask ? overTask.status : null;
+
+		if (!overStatus) {
+			const isOverColumn = columns.some((col) => col.status === overId);
+			if (isOverColumn) {
+				overStatus = overId as TaskStatus;
+			}
+		}
+
+		if (!activeStatus || !overStatus || activeStatus === overStatus) {
+			return;
+		}
+
+		// Moving to a different column
+		const sourceKey = ["tasks", projectId, activeStatus, "index"];
+		const destKey = ["tasks", projectId, overStatus, "index"];
+
+		let movedTask: any = null;
+
+		// 1. Remove from source
+		queryClient.setQueryData(sourceKey, (oldData: any) => {
+			if (!oldData || !oldData.pages) return oldData;
+			const newPages = oldData.pages.map((page: any[]) => {
+				const found = page.find((t) => t.id === activeId);
+				if (found) movedTask = found;
+				return page.filter((t) => t.id !== activeId);
+			});
+			return { ...oldData, pages: newPages };
+		});
+
+		// 2. Add to dest
+		if (movedTask) {
+			const updatedTask = { ...movedTask, status: overStatus };
+
+			queryClient.setQueryData(destKey, (oldData: any) => {
+				if (!oldData) {
+					return { pages: [[updatedTask]], pageParams: [1] };
+				}
+
+				const newPages = [...oldData.pages];
+				const allTasks = newPages.flatMap((p) => p);
+
+				const overIndex = over.data.current?.sortable?.index;
+
+				if (typeof overIndex === "number") {
+					allTasks.splice(overIndex, 0, updatedTask);
+				} else {
+					allTasks.push(updatedTask);
+				}
+
+				return { ...oldData, pages: [allTasks] };
+			});
+		}
+	};
+
 	const handleDragEnd = (event: DragEndEvent) => {
 		const { active, over } = event;
 
@@ -182,7 +256,7 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 
 	return (
 		<div className="flex flex-col h-full">
-			<DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+			<DndContext sensors={sensors} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
 				<div className="flex h-full gap-4 overflow-x-auto py-4 w-full">
 					{columns.map((col) => (
 						<KanbanColumn
@@ -196,7 +270,11 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 					))}
 				</div>
 
-				{mounted && createPortal(<DragOverlay>{activeTask ? <TaskCard task={activeTask} /> : null}</DragOverlay>, document.body)}
+				{mounted &&
+					createPortal(
+						<DragOverlay dropAnimation={null}>{activeTask ? <TaskCard task={activeTask} /> : null}</DragOverlay>,
+						document.body,
+					)}
 
 				{selectedTaskId && <TaskDetails taskId={selectedTaskId} onClose={() => setSelectedTaskId(null)} />}
 			</DndContext>
