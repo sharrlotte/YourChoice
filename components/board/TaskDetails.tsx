@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { useSession } from "@/lib/auth-client";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface TaskDetailsProps {
 	taskId: string;
@@ -56,6 +57,10 @@ export function TaskDetails({ taskId, onClose }: TaskDetailsProps) {
 								{canManageLabels && <LabelSelector taskId={task.id} projectId={task.projectId} assignedLabels={task.labels} />}
 							</div>
 							<div className="flex items-center gap-2 text-sm text-muted-foreground mt-2 flex-wrap">
+								<Avatar className="h-8 w-8">
+									<AvatarImage src={task.author.image || ""} alt={task.author.name || ""} />
+									<AvatarFallback>{task.author.name?.[0]?.toUpperCase() || "U"}</AvatarFallback>
+								</Avatar>
 								<span>{task.author.name}</span>
 								<span>•</span>
 								<span>{new Date(task.createdAt).toDateString()}</span>
