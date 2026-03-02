@@ -37,7 +37,6 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
 					<UserMenu />
 				</div>
 			</header>
-
 			<main className="flex-1 overflow-hidden p-6 bg-muted/20">
 				<KanbanBoard projectId={project.id} canManageLabels={canManageLabels} />
 			</main>

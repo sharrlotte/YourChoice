@@ -135,23 +135,9 @@ export function CreateTaskForm({ projectId, canManageLabels }: { projectId: stri
 					<Textarea name="description" placeholder="Description (optional)" className="h-32" />
 
 					<div className="flex flex-wrap gap-2 items-center">
-						{selectedLabels.map((label) => (
-							<Badge
-								key={label.id}
-								variant="secondary"
-								style={{ backgroundColor: label.color, color: "#fff" }}
-								className="gap-1 pr-1 h-6 text-xs font-normal"
-							>
-								{label.name}
-								<button type="button" onClick={() => toggleLabel(label)} className="hover:bg-black/20 rounded-full p-0.5">
-									<X size={10} />
-								</button>
-							</Badge>
-						))}
-
 						<Popover open={openCombobox} onOpenChange={setOpenCombobox}>
 							<PopoverTrigger asChild>
-								<Button variant="outline" size="sm" role="combobox" aria-expanded={openCombobox} className="h-6 text-xs">
+								<Button variant="outline" aria-expanded={openCombobox}>
 									<Plus size={12} className="mr-1" />
 									Add Label
 								</Button>
@@ -184,6 +170,19 @@ export function CreateTaskForm({ projectId, canManageLabels }: { projectId: stri
 								</Command>
 							</PopoverContent>
 						</Popover>
+						{selectedLabels.map((label) => (
+							<Badge
+								key={label.id}
+								variant="secondary"
+								style={{ backgroundColor: label.color, color: "#fff" }}
+								className="gap-1 pr-1 h-6 text-xs font-normal"
+							>
+								{label.name}
+								<button type="button" onClick={() => toggleLabel(label)} className="hover:bg-black/20 rounded-full p-0.5">
+									<X size={10} />
+								</button>
+							</Badge>
+						))}
 					</div>
 
 					<DialogFooter>
