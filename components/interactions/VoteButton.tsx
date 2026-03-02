@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useState, useTransition, useEffect } from "react";
 import { useSession, signIn } from "next-auth/react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface VoteButtonProps {
 	taskId: string;
@@ -23,6 +24,7 @@ export function VoteButton({ taskId, initialVotes, initialHasVoted, taskStatus }
 	const [hasVoted, setHasVoted] = useState(initialHasVoted);
 	const [isPending, startTransition] = useTransition();
 	const [showLoginDialog, setShowLoginDialog] = useState(false);
+	const queryClient = useQueryClient();
 
 	useEffect(() => {
 		setVotes(initialVotes);
@@ -47,6 +49,9 @@ export function VoteButton({ taskId, initialVotes, initialHasVoted, taskStatus }
 		startTransition(async () => {
 			try {
 				await toggleVote(taskId);
+				queryClient.invalidateQueries({
+					queryKey: ["tasks"],
+				});
 			} catch (error) {
 				// Revert on error
 				setHasVoted(!newHasVoted);

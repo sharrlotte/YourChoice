@@ -67,8 +67,8 @@ export function TaskCard({ task, onClick, disabled }: TaskCardProps) {
 
 			<CardFooter className="p-3 pt-0 flex items-center justify-between text-xs text-muted-foreground">
 				<div className="flex items-center gap-3 ml-auto">
-					<div className="flex items-center gap-1">
-						<ThumbsUp size={12} />
+					<div className={`flex items-center gap-1 ${task.votes?.length ? "text-white font-medium" : ""}`}>
+						<ThumbsUp size={12} className={task.votes?.length ? "fill-current" : ""} />
 						<span>{task._count.votes}</span>
 					</div>
 					<div className="flex items-center gap-1">
