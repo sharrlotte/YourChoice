@@ -8,6 +8,31 @@ import { SelectIcon } from "@radix-ui/react-select";
 import { Button } from "@/components/ui/button";
 import { Settings } from "lucide-react";
 import { getSession } from "@/lib/auth";
+import { Metadata } from "next";
+
+export async function generateMetadata(props: PageProps<"/projects/[id]">): Promise<Metadata> {
+	const { id } = await props.params;
+
+	const project = await prisma.project.findUnique({
+		where: { id },
+	});
+
+	if (!project) {
+		return {
+			title: "Project Not Found",
+		};
+	}
+
+	return {
+		title: project.name,
+		description: project.description,
+		openGraph: {
+			title: project.name,
+			description: project.description ?? undefined,
+			type: "website",
+		},
+	};
+}
 
 export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
 	const { id } = await props.params;
