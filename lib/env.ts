@@ -27,10 +27,10 @@ export function getMissingAuthEnvVars(): string[] {
 
 export function getAuthEnvOrThrow() {
   return {
-    BETTER_AUTH_SECRET: required("BETTER_AUTH_SECRET"),
-    BETTER_AUTH_URL: required("BETTER_AUTH_URL"),
-    AUTH_GOOGLE_ID: required("AUTH_GOOGLE_ID"),
-    AUTH_GOOGLE_SECRET: required("AUTH_GOOGLE_SECRET"),
+		BETTER_AUTH_SECRET: required("BETTER_AUTH_SECRET"),
+		BETTER_AUTH_URL: required("NEXT_PUBLIC_BETTER_AUTH_URL"),
+		AUTH_GOOGLE_ID: required("AUTH_GOOGLE_ID"),
+		AUTH_GOOGLE_SECRET: required("AUTH_GOOGLE_SECRET"),
   };
 }
 
