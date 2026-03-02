@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { Role } from "@/app/generated/prisma";
 import { revalidatePath } from "next/cache";
@@ -14,7 +14,7 @@ export async function getLabels(projectId: string) {
 }
 
 export async function createLabel(projectId: string, formData: FormData) {
-	const session = await auth();
+	const session = await getSession();
 
 	if (!session?.user) {
 		throw new Error("Unauthorized");
@@ -47,7 +47,7 @@ export async function createLabel(projectId: string, formData: FormData) {
 }
 
 export async function assignLabel(taskId: string, labelId: string) {
-	const session = await auth();
+	const session = await getSession();
 
 	if (!session?.user) {
 		throw new Error("Unauthorized");
@@ -81,7 +81,7 @@ export async function assignLabel(taskId: string, labelId: string) {
 }
 
 export async function removeLabel(taskId: string, labelId: string) {
-	const session = await auth();
+	const session = await getSession();
 
 	if (!session?.user) {
 		throw new Error("Unauthorized");

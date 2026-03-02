@@ -1,5 +1,6 @@
 const AUTH_REQUIRED_ENV_VARS = [
-  "AUTH_SECRET",
+  "BETTER_AUTH_SECRET",
+  "BETTER_AUTH_URL",
   "AUTH_GOOGLE_ID",
   "AUTH_GOOGLE_SECRET",
 ] as const;
@@ -26,7 +27,8 @@ export function getMissingAuthEnvVars(): string[] {
 
 export function getAuthEnvOrThrow() {
   return {
-    AUTH_SECRET: required("AUTH_SECRET"),
+    BETTER_AUTH_SECRET: required("BETTER_AUTH_SECRET"),
+    BETTER_AUTH_URL: required("BETTER_AUTH_URL"),
     AUTH_GOOGLE_ID: required("AUTH_GOOGLE_ID"),
     AUTH_GOOGLE_SECRET: required("AUTH_GOOGLE_SECRET"),
   };

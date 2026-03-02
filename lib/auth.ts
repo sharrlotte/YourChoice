@@ -1,39 +1,45 @@
-import NextAuth from "next-auth";
-import { PrismaAdapter } from "@auth/prisma-adapter";
+import { betterAuth } from "better-auth";
+import { prismaAdapter } from "better-auth/adapters/prisma";
 import prisma from "@/lib/prisma";
-import { authConfig } from "@/lib/auth.config";
-import { getAuthEnvOrThrow, getMissingAuthEnvVars } from "@/lib/env";
-
-const missingAuthEnvVars = getMissingAuthEnvVars();
-
-if (missingAuthEnvVars.length > 0) {
-	throw new Error(`Missing required authentication environment variables: ${missingAuthEnvVars.join(", ")}`);
-}
+import { getAuthEnvOrThrow } from "@/lib/env";
+import { headers } from "next/headers";
 
 const authEnv = getAuthEnvOrThrow();
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
-	adapter: PrismaAdapter(prisma),
-	session: {
-		strategy: "jwt",
-	},
-	secret: authEnv.AUTH_SECRET,
-	callbacks: {
-		async session({ session, token }) {
-			if (token.sub && session.user) {
-				session.user.id = token.sub;
-			}
-			if (token.role && session.user) {
-				session.user.role = token.role as any;
-			}
-			return session;
-		},
-		async jwt({ token, user }) {
-			if (user) {
-				token.role = user.role;
-			}
-			return token;
+export const auth = betterAuth({
+	database: prismaAdapter(prisma, {
+		provider: "postgresql",
+	}),
+	baseURL: authEnv.BETTER_AUTH_URL,
+	basePath: "/api/v1",
+	socialProviders: {
+		google: {
+			clientId: authEnv.AUTH_GOOGLE_ID,
+			clientSecret: authEnv.AUTH_GOOGLE_SECRET,
+			redirectURI: `${authEnv.BETTER_AUTH_URL}/api/v1/callback/google`,
 		},
 	},
-	...authConfig,
+	user: {
+		additionalFields: {
+			role: {
+				type: "string",
+				defaultValue: "USER",
+			},
+		},
+	},
 });
+
+export async function getSession() {
+	const session = await auth.api.getSession({
+		headers: await headers(),
+	});
+	if (!session) return null;
+	return {
+		user: {
+			...session.user,
+			id: session.user.id,
+			role: session.user.role as any,
+		},
+		session: session.session,
+	};
+}

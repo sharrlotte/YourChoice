@@ -1,7 +1,7 @@
 "use server";
 
 import { TaskStatus } from "@/app/generated/prisma";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { eventPublisher } from "@/lib/events";
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
@@ -9,7 +9,7 @@ import { revalidatePath } from "next/cache";
 const ITEMS_PER_PAGE = 10;
 
 export async function getTasks(projectId: string, status: TaskStatus, page: number = 1) {
-	const session = await auth();
+	const session = await getSession();
 	const userId = session?.user?.id;
 
 	const skip = (page - 1) * ITEMS_PER_PAGE;
@@ -44,7 +44,7 @@ export async function getTasks(projectId: string, status: TaskStatus, page: numb
 }
 
 export async function createTask(projectId: string, formData: FormData) {
-	const session = await auth();
+	const session = await getSession();
 	if (!session?.user) {
 		throw new Error("Unauthorized");
 	}
@@ -91,7 +91,7 @@ export async function createTask(projectId: string, formData: FormData) {
 }
 
 export async function updateTaskStatus(taskId: string, newStatus: TaskStatus, newIndex: number) {
-	const session = await auth();
+	const session = await getSession();
 
 	// Allow project owner or developer
 	const task = await prisma.task.findUnique({
@@ -143,7 +143,7 @@ export async function updateTaskStatus(taskId: string, newStatus: TaskStatus, ne
 }
 
 export async function updateTaskDetails(taskId: string, formData: FormData) {
-	const session = await auth();
+	const session = await getSession();
 	if (!session?.user) {
 		throw new Error("Unauthorized");
 	}
@@ -170,7 +170,7 @@ export async function updateTaskDetails(taskId: string, formData: FormData) {
 }
 
 export async function getTaskDetails(taskId: string) {
-	const session = await auth();
+	const session = await getSession();
 	const userId = session?.user?.id;
 
 	const task = await prisma.task.findUnique({

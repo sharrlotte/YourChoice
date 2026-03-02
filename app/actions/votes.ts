@@ -1,12 +1,12 @@
 "use server";
 
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { eventPublisher } from "@/lib/events";
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
 export async function toggleVote(taskId: string) {
-	const session = await auth();
+	const session = await getSession();
 	if (!session?.user) {
 		throw new Error("Unauthorized");
 	}

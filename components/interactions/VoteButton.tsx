@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { ThumbsUp } from "lucide-react";
 import { toast } from "sonner";
 import { useState, useTransition, useEffect } from "react";
-import { useSession, signIn } from "next-auth/react";
+import { useSession, signIn } from "@/lib/auth-client";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -86,7 +86,7 @@ export function VoteButton({ taskId, initialVotes, initialHasVoted, taskStatus }
 						<Button variant="ghost" onClick={() => setShowLoginDialog(false)}>
 							Cancel
 						</Button>
-						<Button onClick={() => signIn("google")}>Sign in</Button>
+						<Button onClick={() => signIn.social({ provider: "google" })}>Sign in</Button>
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>

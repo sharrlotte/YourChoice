@@ -1,13 +1,13 @@
 "use server";
 
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { Role } from "@/app/generated/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 export async function createProject(formData: FormData) {
-	const session = await auth();
+	const session = await getSession();
 
 	if (!session?.user) {
 		throw new Error("Unauthorized");
@@ -33,7 +33,7 @@ export async function createProject(formData: FormData) {
 }
 
 export async function updateProject(id: string, formData: FormData) {
-	const session = await auth();
+	const session = await getSession();
 
 	if (!session?.user) {
 		throw new Error("Unauthorized");
@@ -66,7 +66,7 @@ export async function updateProject(id: string, formData: FormData) {
 }
 
 export async function deleteProject(id: string) {
-	const session = await auth();
+	const session = await getSession();
 
 	if (!session?.user) {
 		throw new Error("Unauthorized");

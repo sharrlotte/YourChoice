@@ -5,7 +5,7 @@ import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupText, InputGro
 import { User } from "@/app/generated/prisma";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth-client";
 import { useEffect, useOptimistic, useState, useTransition } from "react";
 import { useInView } from "react-intersection-observer";
 import { toast } from "sonner";
@@ -47,16 +47,6 @@ export function CommentSection({ taskId }: CommentSectionProps) {
 	}, [inView, hasNextPage, fetchNextPage]);
 
 	const comments = data?.pages.flatMap((page) => page.comments) ?? [];
-
-	// Optimistic updates need to be applied on top of the fetched comments
-	// We reverse the optimistic logic: newest comments are at the top usually, but here we render a list.
-	// The current UI renders comments in a list.
-	// If the server returns comments in descending order (newest first), then optimistic comment should be at the top.
-	// But the UI currently maps `optimisticComments`.
-	// Let's check the UI rendering order.
-	// The `getComments` returns `orderBy: { createdAt: "desc" }`.
-	// So newest comments are first.
-	// Optimistic comment should be prepended.
 
 	const [optimisticComments, addOptimisticComment] = useOptimistic(comments, (state, newComment: CommentWithAuthor) => [
 		newComment,

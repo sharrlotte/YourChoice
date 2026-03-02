@@ -6,20 +6,21 @@ import { CreateProjectDialog } from "@/components/board/CreateProjectDialog";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Button } from "@/components/ui/button";
-import { auth, signIn } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { getErrorMessage, logServerError } from "@/lib/logger";
 import prisma from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { LayoutGrid } from "lucide-react";
 import { GITHUB_REPO_URL, DISCORD_INVITE_URL } from "@/lib/constants";
 import { GithubIcon, DiscordIcon } from "@/components/icons";
+import { SignInButton } from "@/components/auth/SignInButton";
 
 function isRedirectError(error: unknown) {
 	return typeof error === "object" && error !== null && (error as Error).message === "NEXT_REDIRECT";
 }
 
 export default async function Home() {
-	const session = await auth();
+	const session = await getSession();
 	const projects = await prisma.project.findMany({
 		orderBy: { createdAt: "desc" },
 		include: {
@@ -43,23 +44,7 @@ export default async function Home() {
 				) : (
 					<div className="flex items-center gap-4">
 						<ThemeToggle />
-						<form
-							action={async () => {
-								"use server";
-								try {
-									await signIn("google", { redirectTo: "/" });
-								} catch (error) {
-									if (isRedirectError(error)) throw error;
-									logServerError("home.signIn", error);
-									const message = getErrorMessage(error);
-									redirect(`/auth/error?error=SIGNIN_FAILED&message=${encodeURIComponent(message)}`);
-								}
-							}}
-						>
-							<Button type="submit" size="sm">
-								Sign in with Google
-							</Button>
-						</form>
+						<SignInButton />
 					</div>
 				)}
 			</header>

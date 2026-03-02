@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth-client";
 
 interface TaskDetailsProps {
 	taskId: string;
@@ -29,7 +29,7 @@ export function TaskDetails({ taskId, onClose }: TaskDetailsProps) {
 		queryFn: () => getTaskDetails(taskId),
 	});
 
-	const isDeveloper = session?.user?.role === "DEVELOPER";
+	const isDeveloper = (session?.user as any)?.role === "DEVELOPER";
 	const isProjectOwner = task?.project?.ownerId === session?.user?.id;
 	const canManageLabels = isDeveloper || isProjectOwner;
 

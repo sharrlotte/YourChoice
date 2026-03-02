@@ -1,18 +1,18 @@
 import { KanbanBoard } from "@/components/board/KanbanBoard";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
-import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { Role } from "@/app/generated/prisma";
 import { notFound } from "next/navigation";
 import { SelectIcon } from "@radix-ui/react-select";
 import { Button } from "@/components/ui/button";
 import { Settings } from "lucide-react";
+import { getSession } from "@/lib/auth";
 
 export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
 	const { id } = await props.params;
 
-	const session = await auth();
+	const session = await getSession();
 
 	const project = await prisma.project.findUnique({
 		where: { id },

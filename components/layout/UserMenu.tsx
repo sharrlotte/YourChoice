@@ -12,12 +12,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LogOut } from "lucide-react";
-import { signOut, useSession } from "next-auth/react";
+import { signOut, useSession } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
 
 export function UserMenu() {
-  const { data: session, status } = useSession();
+  const { data: session, isPending } = useSession();
+  const router = useRouter();
 
-  if (status === "loading") {
+  if (isPending) {
     return <Skeleton className="h-8 w-8 rounded-full" />;
   }
 
@@ -41,12 +43,15 @@ export function UserMenu() {
               {session.user.email}
             </p>
             <p className="text-[10px] leading-none text-primary font-semibold mt-1 uppercase bg-muted/50 w-fit px-1 py-0.5 rounded">
-                {session.user.role}
+                {(session.user as any).role}
             </p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/" })} className="text-destructive focus:text-destructive">
+        <DropdownMenuItem onClick={async () => {
+            await signOut();
+            router.push("/");
+        }} className="text-destructive focus:text-destructive">
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>
         </DropdownMenuItem>
