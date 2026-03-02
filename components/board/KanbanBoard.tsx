@@ -4,12 +4,13 @@ import { updateTaskStatus } from "@/app/actions/tasks";
 import { KanbanColumn } from "@/components/board/KanbanColumn";
 import { TaskStatus } from "@prisma/client";
 import { DndContext, DragEndEvent, DragOverlay, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { arrayMove } from "@dnd-kit/sortable";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { toast } from "sonner";
 import { TaskCard } from "./TaskCard";
 import { TaskDetails } from "./TaskDetails";
-import { toast } from "sonner";
 
 const columns: { status: TaskStatus; title: string }[] = [
 	{ status: "PENDING_SUGGESTION", title: "Pending Suggestion" },
@@ -38,52 +39,30 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 	);
 
 	const updateStatusMutation = useMutation({
-		mutationFn: async ({
-			taskId,
-			status,
-			index,
-			overTaskId,
-		}: {
-			taskId: string;
-			status: TaskStatus;
-			index: number;
-			overTaskId?: string;
-		}) => {
+		mutationFn: async ({ taskId, status, index }: { taskId: string; status: TaskStatus; index: number }) => {
 			await updateTaskStatus(taskId, status, index);
 		},
-		onMutate: async ({ taskId, status, index, overTaskId }) => {
+		onMutate: async ({ taskId, status, index }) => {
 			await queryClient.cancelQueries({ queryKey: ["tasks", projectId] });
 
 			const previousTasks = queryClient.getQueriesData({ queryKey: ["tasks", projectId] });
 
 			let movedTask: any = null;
 
-			// Find the task first to ensure we have it before modifications
-			for (const [, data] of previousTasks) {
-				if ((data as any)?.pages) {
-					for (const page of (data as any).pages) {
-						const found = page.find((t: any) => t.id === taskId);
-						if (found) {
-							movedTask = found;
-							break;
-						}
-					}
-				}
-				if (movedTask) break;
-			}
-
-			// Remove from all lists
+			// 1. Find and remove task from old location
 			queryClient.setQueriesData({ queryKey: ["tasks", projectId] }, (oldData: any) => {
 				if (!oldData || !oldData.pages) return oldData;
 
 				const newPages = oldData.pages.map((page: any[]) => {
+					const found = page.find((t) => t.id === taskId);
+					if (found) movedTask = found;
 					return page.filter((t) => t.id !== taskId);
 				});
 
 				return { ...oldData, pages: newPages };
 			});
 
-			// Add to destination
+			// 2. Add to new location
 			if (movedTask) {
 				const updatedTask = { ...movedTask, status: status, index: index };
 
@@ -92,49 +71,11 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 						return { pages: [[updatedTask]], pageParams: [1] };
 					}
 
-					const newPages = [...oldData.pages];
-					if (newPages.length === 0) {
-						newPages.push([updatedTask]);
-						return { ...oldData, pages: newPages };
-					}
+					const allTasks = oldData.pages.flatMap((page: any[]) => page);
+					allTasks.push(updatedTask);
+					allTasks.sort((a: any, b: any) => a.index - b.index);
 
-					// If we have an overTaskId, try to insert relative to it
-					if (overTaskId) {
-						let inserted = false;
-						for (let i = 0; i < newPages.length; i++) {
-							const page = newPages[i];
-							const overIndex = page.findIndex((t: any) => t.id === overTaskId);
-							if (overIndex !== -1) {
-								// Found the page with the overTask
-								const newPage = [...page];
-
-								if (movedTask.status === status && movedTask.index < index) {
-									// Moving down in same column -> Insert AFTER
-									// Note: using 'index' (targetIndex) here might be safer than overTask.index if overTask isn't reliable
-									// But overTaskId logic relies on overTask position.
-									// If movedTask.index < overTask.index (we are moving down), we insert after.
-									newPage.splice(overIndex + 1, 0, updatedTask);
-								} else {
-									// Moving up or changing column -> Insert BEFORE
-									newPage.splice(overIndex, 0, updatedTask);
-								}
-
-								newPages[i] = newPage;
-								inserted = true;
-								break;
-							}
-						}
-
-						if (!inserted) {
-							// Fallback: Add to start of first page
-							newPages[0] = [updatedTask, ...newPages[0]];
-						}
-					} else {
-						// No overTaskId (dropped on column or empty space), add to start
-						newPages[0] = [updatedTask, ...newPages[0]];
-					}
-
-					return { ...oldData, pages: newPages };
+					return { ...oldData, pages: [allTasks] };
 				});
 			}
 
@@ -165,36 +106,75 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 			return;
 		}
 
-		const taskId = active.id as string;
-		const overId = over.id;
+		const activeTask = active.data.current?.task;
+		if (!activeTask) {
+			setActiveTask(null);
+			return;
+		}
 
-		// Determine target column and index
-		let targetStatus: TaskStatus;
-		let targetIndex: number;
-		let overTaskId: string | undefined;
+		const activeId = active.id as string;
+		const overId = over.id as string;
+
+		let newStatus = activeTask.status;
 
 		// Check if dropped on a column (empty area) or on a task
 		const isOverColumn = columns.some((col) => col.status === overId);
 
 		if (isOverColumn) {
-			targetStatus = overId as TaskStatus;
-			targetIndex = 0;
+			newStatus = overId as TaskStatus;
 		} else {
-			// Dropped on a task
 			const overTask = over.data.current?.task;
 			if (overTask) {
-				targetStatus = overTask.status;
-				targetIndex = overTask.index;
-				overTaskId = overTask.id;
-			} else {
-				// Fallback
-				setActiveTask(null);
-				return;
+				newStatus = overTask.status;
 			}
 		}
 
-		if (activeTask && (activeTask.status !== targetStatus || activeTask.index !== targetIndex)) {
-			updateStatusMutation.mutate({ taskId, status: targetStatus, index: targetIndex, overTaskId });
+		// Get tasks for the destination column to calculate index
+		// We need to fetch from cache
+		const queryKey = ["tasks", projectId, newStatus, "index"];
+		const data = queryClient.getQueryData(queryKey) as any;
+		const tasks = data?.pages.flatMap((p: any) => p) || [];
+
+		let newIndex = activeTask.index;
+
+		if (activeTask.status !== newStatus && isOverColumn) {
+			// Dropped on column -> Add to bottom
+			const lastItem = tasks[tasks.length - 1];
+			newIndex = lastItem ? lastItem.index + 1000 : 1000;
+		} else {
+			// Dropped on a task (or reordered within column)
+			const overData = over.data.current;
+			const overIndex = overData?.sortable?.index;
+			const activeIndex = active.data.current?.sortable?.index;
+
+			if (typeof overIndex === "number") {
+				let newTasks = [...tasks];
+
+				if (activeTask.status === newStatus && typeof activeIndex === "number") {
+					// Reorder within same column
+					newTasks = arrayMove(newTasks, activeIndex, overIndex);
+
+					const prev = newTasks[overIndex - 1];
+					const next = newTasks[overIndex + 1];
+
+					if (!prev) newIndex = next ? next.index / 2 : 1000;
+					else if (!next) newIndex = prev.index + 1000;
+					else newIndex = (prev.index + next.index) / 2;
+				} else {
+					// Move to different column (insert before overIndex)
+					const prev = tasks[overIndex - 1];
+					const next = tasks[overIndex];
+
+					if (!prev) newIndex = next ? next.index / 2 : 1000;
+					else if (!next)
+						newIndex = prev.index + 1000; // Should rarely happen if dropping on a task
+					else newIndex = (prev.index + next.index) / 2;
+				}
+			}
+		}
+
+		if (activeTask.status !== newStatus || Math.abs(activeTask.index - newIndex) > 0.0001) {
+			updateStatusMutation.mutate({ taskId: activeId, status: newStatus, index: newIndex });
 		}
 
 		setActiveTask(null);
@@ -202,11 +182,7 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 
 	return (
 		<div className="flex flex-col h-full">
-			<DndContext
-				sensors={sensors}
-				onDragStart={handleDragStart}
-				onDragEnd={handleDragEnd}
-			>
+			<DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
 				<div className="flex h-full gap-4 overflow-x-auto py-4 w-full">
 					{columns.map((col) => (
 						<KanbanColumn

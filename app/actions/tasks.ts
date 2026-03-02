@@ -68,7 +68,7 @@ export async function createTask(projectId: string, formData: FormData) {
 		},
 	});
 
-	const newIndex = minIndexTask ? minIndexTask.index / 2 : 1000;
+	const newIndex = minIndexTask && !isNaN(minIndexTask.index) ? minIndexTask.index / 2 : 1000;
 
 	const task = await prisma.task.create({
 		data: {
@@ -112,11 +112,12 @@ export async function updateTaskStatus(taskId: string, newStatus: TaskStatus, ne
 
 	// If status changed or index changed
 	if (oldStatus !== newStatus || oldIndex !== newIndex) {
+		const safeIndex = isNaN(newIndex) ? oldIndex || 1000 : newIndex;
 		await prisma.task.update({
 			where: { id: taskId },
 			data: {
 				status: newStatus,
-				index: newIndex,
+				index: safeIndex,
 			},
 		});
 
