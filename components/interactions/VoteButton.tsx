@@ -86,7 +86,7 @@ export function VoteButton({ taskId, initialVotes, initialHasVoted, taskStatus }
 						<Button variant="ghost" onClick={() => setShowLoginDialog(false)}>
 							Cancel
 						</Button>
-						<Button onClick={() => signIn.social({ provider: "google" })}>Sign in</Button>
+						<Button onClick={() => signIn.social({ provider: "google", callbackURL: window.location.href })}>Sign in</Button>
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>

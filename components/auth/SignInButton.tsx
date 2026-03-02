@@ -13,7 +13,7 @@ export function SignInButton() {
 		try {
 			await signIn.social({
 				provider: "google",
-				callbackURL: "/",
+				callbackURL: window.location.href,
 			});
 		} catch (error) {
 			toast.error("Failed to sign in");

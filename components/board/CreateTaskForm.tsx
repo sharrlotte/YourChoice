@@ -108,7 +108,7 @@ export function CreateTaskForm({ projectId, canManageLabels }: { projectId: stri
 
 	if (!session?.user) {
 		return (
-			<Button className="w-full" onClick={() => signIn.social({ provider: "google" })}>
+			<Button className="w-full" onClick={() => signIn.social({ provider: "google", callbackURL: window.location.href })}>
 				Sign in to create task
 			</Button>
 		);
