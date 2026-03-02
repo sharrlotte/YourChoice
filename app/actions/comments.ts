@@ -16,7 +16,7 @@ export async function getComments(taskId: string, cursor?: string) {
 		orderBy: {
 			createdAt: "desc",
 		},
-		take: COMMENTS_PER_PAGE + 1, // Fetch one more to check for next page
+		take: COMMENTS_PER_PAGE + 1,
 		cursor: cursor ? { id: cursor } : undefined,
 		skip: cursor ? 1 : 0,
 	});

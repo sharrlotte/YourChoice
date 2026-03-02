@@ -39,7 +39,6 @@ export async function updateProject(id: string, formData: FormData) {
 		throw new Error("Unauthorized");
 	}
 
-	// Allow project owner to update
 	const project = await prisma.project.findUnique({ where: { id } });
 	if (!project) throw new Error("Project not found");
 
@@ -72,7 +71,6 @@ export async function deleteProject(id: string) {
 		throw new Error("Unauthorized");
 	}
 
-	// Allow project owner to delete
 	const project = await prisma.project.findUnique({ where: { id } });
 	if (!project) throw new Error("Project not found");
 

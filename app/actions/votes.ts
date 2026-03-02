@@ -21,7 +21,6 @@ export async function toggleVote(taskId: string) {
 
 	const currentStatus = task.status;
 
-	// Check if user has voted for this task at this status
 	const existingVote = await prisma.vote.findUnique({
 		where: {
 			taskId_userId_status: {
@@ -33,12 +32,10 @@ export async function toggleVote(taskId: string) {
 	});
 
 	if (existingVote) {
-		// Remove vote
 		await prisma.vote.delete({
 			where: { id: existingVote.id },
 		});
 	} else {
-		// Add vote
 		await prisma.vote.create({
 			data: {
 				taskId,

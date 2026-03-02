@@ -6,7 +6,6 @@ import { Role } from "@/app/generated/prisma";
 import { revalidatePath } from "next/cache";
 
 export async function getLabels(projectId: string) {
-	// Anyone can see labels? Yes, to display them.
 	return prisma.label.findMany({
 		where: { projectId },
 		orderBy: { name: "asc" },
@@ -20,7 +19,6 @@ export async function createLabel(projectId: string, formData: FormData) {
 		throw new Error("Unauthorized");
 	}
 
-	// Allow project owner or developer
 	const project = await prisma.project.findUnique({ where: { id: projectId } });
 	if (!project) throw new Error("Project not found");
 
@@ -62,8 +60,6 @@ export async function assignLabel(taskId: string, labelId: string) {
 		throw new Error("Task not found");
 	}
 
-	// Allow project owner or developer or task author?
-	// Maybe keep strict for labels -> Owner/Developer
 	if (task.project.ownerId !== session.user.id && session.user.role !== Role.DEVELOPER) {
 		throw new Error("Unauthorized");
 	}

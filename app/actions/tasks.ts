@@ -57,7 +57,6 @@ export async function createTask(projectId: string, formData: FormData) {
 		throw new Error("Title is required");
 	}
 
-	// Get min index for the pending status to add to top
 	const minIndexTask = await prisma.task.findFirst({
 		where: {
 			projectId,
@@ -93,7 +92,6 @@ export async function createTask(projectId: string, formData: FormData) {
 export async function updateTaskStatus(taskId: string, newStatus: TaskStatus, newIndex: number) {
 	const session = await getSession();
 
-	// Allow project owner or developer
 	const task = await prisma.task.findUnique({
 		where: { id: taskId },
 		include: { project: true },
@@ -110,7 +108,6 @@ export async function updateTaskStatus(taskId: string, newStatus: TaskStatus, ne
 	const oldStatus = task.status;
 	const oldIndex = task.index;
 
-	// If status changed or index changed
 	if (oldStatus !== newStatus || oldIndex !== newIndex) {
 		const safeIndex = isNaN(newIndex) ? oldIndex || 1000 : newIndex;
 		await prisma.task.update({
@@ -121,7 +118,6 @@ export async function updateTaskStatus(taskId: string, newStatus: TaskStatus, ne
 			},
 		});
 
-		// Reorder tasks to maintain spacing
 		await prisma.$executeRaw`
 			WITH ranked AS (
 				SELECT id, ROW_NUMBER() OVER (ORDER BY "index") as rn
@@ -191,12 +187,6 @@ export async function getTaskDetails(taskId: string) {
 			votes: {
 				where: {
 					userId: userId ?? "undefined",
-					// We also need to check status matches current status
-					// But `task` is fetched here, so we don't know status beforehand easily
-					// However, `votes` relation includes `status`.
-					// So if we filter by userId, we get all votes by user for this task.
-					// We can filter in JS or just return them.
-					// Let's return all votes by user for this task, client can check against task.status.
 				},
 			},
 			_count: {

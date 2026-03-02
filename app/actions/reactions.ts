@@ -30,12 +30,10 @@ export async function toggleReaction(taskId: string, emoji: string) {
 	});
 
 	if (existingReaction) {
-		// Remove reaction
 		await prisma.reaction.delete({
 			where: { id: existingReaction.id },
 		});
 	} else {
-		// Add reaction
 		await prisma.reaction.create({
 			data: {
 				taskId,
