@@ -58,7 +58,7 @@ export function TaskDetails({ taskId, onClose }: TaskDetailsProps) {
 							<div className="flex items-center gap-2 text-sm text-muted-foreground mt-2 flex-wrap">
 								<span>{task.author.name}</span>
 								<span>•</span>
-								<span>{new Date(task.createdAt).toLocaleDateString()}</span>
+								<span>{new Date(task.createdAt).toDateString()}</span>
 								<span>•</span>
 								<Badge variant="outline" className="uppercase text-xs font-medium">
 									{task.status.replace(/_/g, " ")}

@@ -49,7 +49,6 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 
 			let movedTask: any = null;
 
-			// 1. Find and remove task from old location
 			queryClient.setQueriesData({ queryKey: ["tasks", projectId] }, (oldData: any) => {
 				if (!oldData || !oldData.pages) return oldData;
 
@@ -62,7 +61,6 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 				return { ...oldData, pages: newPages };
 			});
 
-			// 2. Add to new location
 			if (movedTask) {
 				const updatedTask = { ...movedTask, status: status, index: index };
 
@@ -105,7 +103,6 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 		const activeId = active.id;
 		const overId = over.id;
 
-		// Find the containers
 		const activeData = active.data.current;
 		const overData = over.data.current;
 
@@ -130,13 +127,11 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 			return;
 		}
 
-		// Moving to a different column
 		const sourceKey = ["tasks", projectId, activeStatus, "index"];
 		const destKey = ["tasks", projectId, overStatus, "index"];
 
 		let movedTask: any = null;
 
-		// 1. Remove from source
 		queryClient.setQueryData(sourceKey, (oldData: any) => {
 			if (!oldData || !oldData.pages) return oldData;
 			const newPages = oldData.pages.map((page: any[]) => {
@@ -147,7 +142,6 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 			return { ...oldData, pages: newPages };
 		});
 
-		// 2. Add to dest
 		if (movedTask) {
 			const updatedTask = { ...movedTask, status: overStatus };
 
@@ -191,7 +185,6 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 
 		let newStatus = activeTask.status;
 
-		// Check if dropped on a column (empty area) or on a task
 		const isOverColumn = columns.some((col) => col.status === overId);
 
 		if (isOverColumn) {
@@ -203,8 +196,6 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 			}
 		}
 
-		// Get tasks for the destination column to calculate index
-		// We need to fetch from cache
 		const queryKey = ["tasks", projectId, newStatus, "index"];
 		const data = queryClient.getQueryData(queryKey) as any;
 		const tasks = data?.pages.flatMap((p: any) => p) || [];
@@ -212,11 +203,9 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 		let newIndex = activeTask.index;
 
 		if (activeTask.status !== newStatus && isOverColumn) {
-			// Dropped on column -> Add to bottom
 			const lastItem = tasks[tasks.length - 1];
 			newIndex = lastItem ? lastItem.index + 1000 : 1000;
 		} else {
-			// Dropped on a task (or reordered within column)
 			const overData = over.data.current;
 			const overIndex = overData?.sortable?.index;
 			const activeIndex = active.data.current?.sortable?.index;
@@ -225,7 +214,6 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 				let newTasks = [...tasks];
 
 				if (activeTask.status === newStatus && typeof activeIndex === "number") {
-					// Reorder within same column
 					newTasks = arrayMove(newTasks, activeIndex, overIndex);
 
 					const prev = newTasks[overIndex - 1];
@@ -235,13 +223,11 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 					else if (!next) newIndex = prev.index + 1000;
 					else newIndex = (prev.index + next.index) / 2;
 				} else {
-					// Move to different column (insert before overIndex)
 					const prev = tasks[overIndex - 1];
 					const next = tasks[overIndex];
 
 					if (!prev) newIndex = next ? next.index / 2 : 1000;
-					else if (!next)
-						newIndex = prev.index + 1000; // Should rarely happen if dropping on a task
+					else if (!next) newIndex = prev.index + 1000;
 					else newIndex = (prev.index + next.index) / 2;
 				}
 			}

@@ -130,7 +130,7 @@ export function CommentSection({ taskId }: CommentSectionProps) {
 							<div key={comment.id} className="bg-muted/50 p-2 rounded text-sm">
 								<div className="flex justify-between items-center mb-1">
 									<span className="font-medium text-foreground">{comment.author.name}</span>
-									<span className="text-xs text-muted-foreground">{new Date(comment.createdAt).toLocaleDateString()}</span>
+									<span className="text-xs text-muted-foreground">{new Date(comment.createdAt).toDateString()}</span>
 								</div>
 								<p className="text-foreground">{comment.content}</p>
 							</div>

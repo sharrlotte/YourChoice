@@ -43,7 +43,7 @@ export default async function ProjectsPage() {
 							</CardHeader>
 							<CardFooter className="flex justify-between text-sm text-muted-foreground">
 								<span>{project._count.tasks} tasks</span>
-								<span>{new Date(project.createdAt).toLocaleDateString()}</span>
+								<span>{new Date(project.createdAt).toDateString()}</span>
 							</CardFooter>
 						</Card>
 					</Link>

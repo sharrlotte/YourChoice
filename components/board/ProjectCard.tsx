@@ -29,7 +29,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
 						</Avatar>
 						<span className="text-xs font-medium text-muted-foreground">{project.owner.name || "Unknown"}</span>
 					</div>
-					<span className="text-[10px] text-muted-foreground">{new Date(project.createdAt).toLocaleDateString()}</span>
+					<span className="text-[10px] text-muted-foreground">{new Date(project.createdAt).toDateString()}</span>
 				</CardFooter>
 			</Card>
 		</Link>

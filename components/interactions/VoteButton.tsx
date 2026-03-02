@@ -69,9 +69,8 @@ export function VoteButton({ taskId, initialVotes, initialHasVoted, taskStatus }
 				disabled={isPending || !isVotingEnabled}
 			>
 				<ThumbsUp size={14} className={cn(hasVoted && "fill-current")} />
-				<span>{votes}</span>
+				<span className="ml-1 font-semibold">{votes}</span>
 			</Button>
-
 			<Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
 				<DialogContent onClick={(e) => e.stopPropagation()}>
 					<DialogHeader>

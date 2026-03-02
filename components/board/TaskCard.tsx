@@ -62,13 +62,11 @@ export function TaskCard({ task, onClick, disabled }: TaskCardProps) {
 						</Badge>
 					))}
 				</div>
+				<p className="text-muted-foreground line-clamp-3 text-sm">{task.description}</p>
 			</CardContent>
 
 			<CardFooter className="p-3 pt-0 flex items-center justify-between text-xs text-muted-foreground">
-				<div className="flex items-center gap-2">
-					<span className="truncate max-w-[80px]">By {task.author.name?.split(" ")[0] || "Unknown"}</span>
-				</div>
-				<div className="flex items-center gap-3">
+				<div className="flex items-center gap-3 ml-auto">
 					<div className="flex items-center gap-1">
 						<ThumbsUp size={12} />
 						<span>{task._count.votes}</span>
