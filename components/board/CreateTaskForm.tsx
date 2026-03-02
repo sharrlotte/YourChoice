@@ -121,7 +121,7 @@ export function CreateTaskForm({ projectId, canManageLabels }: { projectId: stri
 	return (
 		<Dialog open={isOpen} onOpenChange={setIsOpen}>
 			<DialogTrigger asChild>
-				<Button className="w-full">+ New Task</Button>
+				<Button className="w-full">+ Create Suggestion</Button>
 			</DialogTrigger>
 			<DialogContent className="sm:max-w-[500px] overflow-visible">
 				<DialogHeader>

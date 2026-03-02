@@ -1,9 +1,9 @@
 "use client";
 
 import { toggleReaction } from "@/app/actions/reactions";
+import { Reaction, User } from "@/app/generated/prisma";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Reaction, User } from "@/app/generated/prisma";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { useState, useTransition } from "react";
@@ -40,6 +40,8 @@ export function ReactionPicker({ taskId, reactions, currentUserId }: ReactionPic
 		{} as Record<string, { count: number; hasReacted: boolean }>,
 	);
 
+	const noReactions = Object.keys(reactionCounts).length === 0;
+
 	const handleToggle = (emoji: string) => {
 		startTransition(async () => {
 			try {
@@ -61,13 +63,24 @@ export function ReactionPicker({ taskId, reactions, currentUserId }: ReactionPic
 					disabled={isPending}
 					className={cn(
 						"flex items-center gap-1 px-2 py-1 rounded-full text-xs border transition-colors",
-						hasReacted ? "bg-blue-100 border-blue-200 text-blue-700" : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100",
+						hasReacted ? "border-primary bg-primary/10" : "",
 					)}
 				>
 					<span>{emoji}</span>
 					<span>{count}</span>
 				</button>
 			))}
+			{noReactions && (
+				<button
+					key={COMMON_EMOJIS[0]}
+					onClick={() => handleToggle(COMMON_EMOJIS[0])}
+					disabled={isPending}
+					className="flex items-center gap-1 px-2 py-1 rounded-full text-xs border transition-colors"
+				>
+					<span>{COMMON_EMOJIS[0]}</span>
+					<span>{0}</span>
+				</button>
+			)}
 
 			<div className="relative">
 				<Button variant="outline" size="icon" className="h-6 w-6 rounded-full" onClick={() => setShowPicker(!showPicker)}>
@@ -75,11 +88,11 @@ export function ReactionPicker({ taskId, reactions, currentUserId }: ReactionPic
 				</Button>
 
 				{showPicker && (
-					<div className="absolute top-8 left-0 z-10 bg-white shadow-lg rounded p-2 border flex gap-1 w-max">
+					<div className="absolute top-8 left-0 z-10 bg-card shadow-lg rounded p-2 border flex gap-1 w-max">
 						{COMMON_EMOJIS.map((emoji) => (
-							<button key={emoji} onClick={() => handleToggle(emoji)} className="hover:bg-gray-100 p-1 rounded text-lg">
+							<Button key={emoji} onClick={() => handleToggle(emoji)} variant="ghost" size="icon">
 								{emoji}
-							</button>
+							</Button>
 						))}
 					</div>
 				)}
