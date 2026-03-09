@@ -11,9 +11,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
-import { LogOut } from "lucide-react";
+import { LogOut, Folder } from "lucide-react";
 import { signOut, useSession } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export function UserMenu() {
   const { data: session, isPending } = useSession();
@@ -42,11 +43,18 @@ export function UserMenu() {
             <p className="text-xs leading-none text-muted-foreground">
               {session.user.email}
             </p>
-            <p className="text-[10px] leading-none text-primary font-semibold mt-1 uppercase bg-muted/50 w-fit px-1 py-0.5 rounded">
+            <p className="text-[10px] leading-none text-primary font-semibold mt-1 uppercase bg-muted/50 w-fit py-0.5 rounded">
                 {(session.user as any).role}
             </p>
           </div>
         </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link href="/projects" className="cursor-pointer w-full">
+            <Folder className="mr-2 h-4 w-4" />
+            <span>Projects</span>
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={async () => {
             await signOut();
