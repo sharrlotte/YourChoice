@@ -1,7 +1,10 @@
 "use server";
 
 import { TaskStatus } from "@/app/generated/prisma";
+import { TaskCreatedEmail } from "@/components/email/TaskCreatedEmail";
 import { getSession } from "@/lib/auth";
+import { resend } from "@/lib/email";
+import { env } from "@/lib/env";
 import { eventPublisher } from "@/lib/events";
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
@@ -84,6 +87,31 @@ export async function createTask(projectId: string, formData: FormData) {
 	});
 
 	await eventPublisher.publish("TaskCreated", { taskId: task.id, title: task.title });
+
+	// Send email notification to project owner
+	const project = await prisma.project.findUnique({
+		where: { id: projectId },
+		include: { owner: true },
+	});
+
+	if (project?.owner.email && project.owner.email !== session.user.email && env.RESEND_API_KEY) {
+		try {
+			await resend.emails.send({
+				from: env.EMAIL_FROM,
+				to: project.owner.email,
+				subject: `New Task: ${task.title}`,
+				react: TaskCreatedEmail({
+					authorName: session.user.name || "A user",
+					taskTitle: task.title,
+					taskDescription: task.description || "",
+					taskUrl: `${env.APP_URL}/projects/${projectId}?task=${task.id}`,
+					projectName: project.name,
+				}),
+			});
+		} catch (error) {
+			console.error("Failed to send email", error);
+		}
+	}
 
 	revalidatePath(`/projects/${projectId}`);
 	return task;

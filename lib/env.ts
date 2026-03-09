@@ -36,4 +36,7 @@ export function getAuthEnvOrThrow() {
 
 export const env = {
   DATABASE_URL: required("DATABASE_URL"),
+  RESEND_API_KEY: optional("RESEND_API_KEY"),
+  EMAIL_FROM: optional("EMAIL_FROM") || "onboarding@resend.dev",
+  APP_URL: optional("NEXT_PUBLIC_BETTER_AUTH_URL") || "http://localhost:3000",
 };

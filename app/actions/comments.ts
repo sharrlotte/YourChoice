@@ -1,6 +1,9 @@
 "use server";
 
+import { NewCommentEmail } from "@/components/email/NewCommentEmail";
 import { getSession } from "@/lib/auth";
+import { resend } from "@/lib/email";
+import { env } from "@/lib/env";
 import { eventPublisher } from "@/lib/events";
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
@@ -46,6 +49,10 @@ export async function createComment(taskId: string, formData: FormData) {
 
 	const task = await prisma.task.findUnique({
 		where: { id: taskId },
+		include: {
+			author: true,
+			project: true,
+		},
 	});
 
 	if (!task) {
@@ -64,6 +71,54 @@ export async function createComment(taskId: string, formData: FormData) {
 	});
 
 	await eventPublisher.publish("CommentAdded", { taskId, commentId: comment.id });
+
+	// Send email to task author if they are not the one commenting
+	if (env.RESEND_API_KEY) {
+		const emailsToSend = [];
+
+		// Email to task author
+		if (task.author.email && task.authorId !== session.user.id) {
+			emailsToSend.push({
+				to: task.author.email,
+				subject: `New Comment on ${task.title}`,
+				react: NewCommentEmail({
+					authorName: session.user.name || "A user",
+					taskTitle: task.title,
+					commentContent: content,
+					taskUrl: `${env.APP_URL}/projects/${task.projectId}?task=${taskId}`,
+					projectName: task.project.name,
+				}),
+			});
+		}
+
+		// Email to comment author (confirmation)
+		if (session.user.email) {
+			emailsToSend.push({
+				to: session.user.email,
+				subject: `You commented on ${task.title}`,
+				react: NewCommentEmail({
+					authorName: "You",
+					taskTitle: task.title,
+					commentContent: content,
+					taskUrl: `${env.APP_URL}/projects/${task.projectId}?task=${taskId}`,
+					projectName: task.project.name,
+				}),
+			});
+		}
+
+		try {
+			await Promise.all(
+				emailsToSend.map((email) =>
+					resend.emails.send({
+						from: env.EMAIL_FROM,
+						...email,
+					}),
+				),
+			);
+		} catch (error) {
+			console.error("Failed to send email", error);
+		}
+	}
 
 	revalidatePath(`/projects/${task.projectId}`);
 	return comment;
