@@ -60,7 +60,11 @@ export async function assignLabel(taskId: string, labelId: string) {
 		throw new Error("Task not found");
 	}
 
-	if (task.project.ownerId !== session.user.id && session.user.role !== Role.DEVELOPER) {
+	if (
+		task.project.ownerId !== session.user.id &&
+		session.user.role !== Role.DEVELOPER &&
+		task.authorId !== session.user.id
+	) {
 		throw new Error("Unauthorized");
 	}
 
@@ -92,7 +96,11 @@ export async function removeLabel(taskId: string, labelId: string) {
 		throw new Error("Task not found");
 	}
 
-	if (task.project.ownerId !== session.user.id && session.user.role !== Role.DEVELOPER) {
+	if (
+		task.project.ownerId !== session.user.id &&
+		session.user.role !== Role.DEVELOPER &&
+		task.authorId !== session.user.id
+	) {
 		throw new Error("Unauthorized");
 	}
 

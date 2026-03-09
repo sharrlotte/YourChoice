@@ -172,10 +172,13 @@ export async function updateTaskDetails(taskId: string, formData: FormData) {
 		throw new Error("Unauthorized");
 	}
 
-	const task = await prisma.task.findUnique({ where: { id: taskId } });
+	const task = await prisma.task.findUnique({
+		where: { id: taskId },
+		include: { project: true },
+	});
 	if (!task) throw new Error("Task not found");
 
-	if (session.user.role !== "DEVELOPER" && task.authorId !== session.user.id) {
+	if (session.user.role !== "DEVELOPER" && task.authorId !== session.user.id && task.project.ownerId !== session.user.id) {
 		throw new Error("Unauthorized");
 	}
 

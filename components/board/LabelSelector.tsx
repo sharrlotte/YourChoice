@@ -50,7 +50,7 @@ export function LabelSelector({ taskId, projectId, assignedLabels }: LabelSelect
 	return (
 		<Popover open={isOpen} onOpenChange={setIsOpen}>
 			<PopoverTrigger asChild>
-				<Button variant="outline" size="sm" className="h-8 border-dashed">
+				<Button variant="outline" className="border-dashed">
 					<Tag size={14} className="mr-1" />
 					Labels
 				</Button>
