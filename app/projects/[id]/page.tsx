@@ -9,6 +9,7 @@ import { LayoutGrid, Settings } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { Metadata } from "next";
 import { Footer } from "@/components/layout/Footer";
+import Link from "next/link";
 
 export async function generateMetadata(props: PageProps<"/projects/[id]">): Promise<Metadata> {
 	const { id } = await props.params;
@@ -68,9 +69,13 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
 							<p className="text-sm text-muted-foreground max-w-xl truncate">{project.description}</p>
 						</div>
 						<div className="ml-auto">
-							<Button variant="ghost" size="icon">
-								<Settings className="size-5" />
-							</Button>
+							{canManageLabels && (
+								<Link href={`/projects/${project.id}/settings`}>
+									<Button variant="ghost" size="icon">
+										<Settings className="size-5" />
+									</Button>
+								</Link>
+							)}
 						</div>
 					</div>
 					<KanbanBoard projectId={project.id} canManageLabels={canManageLabels} />
