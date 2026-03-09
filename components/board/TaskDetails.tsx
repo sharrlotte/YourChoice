@@ -114,7 +114,7 @@ export function TaskDetails({ taskId, onClose }: TaskDetailsProps) {
 									</Avatar>
 									<span>{task.author.name}</span>
 									<span>•</span>
-									<span>{new Date(task.createdAt).toDateString()}</span>
+									<span>{new Date(task.createdAt).toLocaleDateString()}</span>
 									<span>•</span>
 									<Badge variant="outline" className="uppercase text-xs font-medium">
 										{task.status.replace(/_/g, " ")}
@@ -162,7 +162,7 @@ export function TaskDetails({ taskId, onClose }: TaskDetailsProps) {
 									</form>
 								) : (
 									<>
-										<div className="prose dark:prose-invert max-w-none text-foreground mb-8 break-words whitespace-pre-wrap">
+										<div className="prose dark:prose-invert max-w-none text-foreground mb-8 break-words whitespace-pre-wrap text-sm">
 											{task.description || <span className="italic text-muted-foreground">No description provided.</span>}
 										</div>
 

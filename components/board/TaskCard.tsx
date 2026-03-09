@@ -83,7 +83,7 @@ export function TaskCard({ task, onClick, disabled }: TaskCardProps) {
 						<AvatarImage src={task.author.image || ""} alt={task.author.name || ""} />
 						<AvatarFallback className="text-[10px]">{task.author.name?.[0]?.toUpperCase() || "U"}</AvatarFallback>
 					</Avatar>
-					<span className="text-[10px] truncate max-w-[80px] hidden sm:inline-block">{task.author.name}</span>
+					<span className="text-[10px] truncate max-w-[180px] hidden sm:inline-block">{task.author.name}</span>
 				</div>
 				<div className="flex items-center gap-3 ml-auto">
 					<div className={`flex items-center gap-1 ${task.votes?.length ? "text-white font-medium" : ""}`}>

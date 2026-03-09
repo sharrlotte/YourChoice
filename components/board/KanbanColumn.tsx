@@ -12,6 +12,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useInView } from "react-intersection-observer";
 import { TaskCard } from "./TaskCard";
+import { Loader2 } from "lucide-react";
 
 interface KanbanColumnProps {
 	projectId: string;
@@ -41,6 +42,7 @@ export function KanbanColumn({ projectId, status, title, onTaskClick, canManageL
 	});
 
 	useEffect(() => {
+		console.log(inView, hasNextPage);
 		if (inView && hasNextPage) {
 			fetchNextPage();
 		}
@@ -49,7 +51,7 @@ export function KanbanColumn({ projectId, status, title, onTaskClick, canManageL
 	const tasks = data?.pages.flatMap((page) => page) ?? [];
 
 	return (
-		<div className="flex flex-col bg-muted/50 rounded-lg w-full min-w-80 h-full border overflow-hidden">
+		<div className="flex flex-col bg-muted/50 rounded-lg w-full min-w-80 h-full border overflow-hidden snap-center">
 			<div className="p-3 font-semibold text-foreground border-b bg-card/20 rounded-t-lg sticky top-0 z-10 flex justify-between items-center shadow-sm">
 				<h2 className="text-sm">{title}</h2>
 				<Badge variant="secondary" className="px-2 py-0.5 rounded-full text-xs">
@@ -74,7 +76,8 @@ export function KanbanColumn({ projectId, status, title, onTaskClick, canManageL
 						/>
 					))}
 				</SortableContext>
-				<div ref={ref} className="h-1" />
+				{isFetchingNextPage && <Loader2 className="animate-spin text-primary mx-auto" size={16} />}
+				<div ref={ref} className="h-1 mb-2" />
 			</div>
 		</div>
 	);

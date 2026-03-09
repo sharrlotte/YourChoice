@@ -15,9 +15,9 @@ import { TaskDetails } from "./TaskDetails";
 const columns: { status: TaskStatus; title: string }[] = [
 	{ status: "PENDING_SUGGESTION", title: "Pending Suggestion" },
 	{ status: "ACCEPTED", title: "Accepted" },
-	{ status: "REJECTED", title: "Rejected" },
 	{ status: "IN_PROGRESS", title: "In Progress" },
 	{ status: "COMPLETED", title: "Completed" },
+	{ status: "REJECTED", title: "Rejected" },
 ];
 
 export function KanbanBoard({ projectId, canManageLabels }: { projectId: string; canManageLabels?: boolean }) {
@@ -243,7 +243,7 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 	return (
 		<div className="flex flex-col h-full">
 			<DndContext sensors={sensors} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
-				<div className="flex h-full gap-4 overflow-x-auto py-4 w-full">
+				<div className="flex h-full gap-3 overflow-x-auto py-4 w-full snap-x snap-mandatory">
 					{columns.map((col) => (
 						<KanbanColumn
 							key={col.status}
