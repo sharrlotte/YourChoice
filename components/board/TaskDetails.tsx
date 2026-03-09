@@ -162,7 +162,7 @@ export function TaskDetails({ taskId, onClose }: TaskDetailsProps) {
 									</form>
 								) : (
 									<>
-										<div className="prose dark:prose-invert max-w-none text-foreground mb-8 break-words whitespace-pre-wrap">
+										<div className="prose dark:prose-invert max-w-none text-foreground mb-8 break-words whitespace-pre-wrap text-sm">
 											{task.description || <span className="italic text-muted-foreground">No description provided.</span>}
 										</div>
 

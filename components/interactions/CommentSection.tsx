@@ -2,6 +2,7 @@
 
 import { createComment, getComments } from "@/app/actions/comments";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupText, InputGroupTextarea } from "@/components/ui/input-group";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User } from "@/app/generated/prisma";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
@@ -117,12 +118,18 @@ export function CommentSection({ taskId }: CommentSectionProps) {
 				) : (
 					<>
 						{optimisticComments.map((comment) => (
-							<div key={comment.id} className="bg-muted/50 p-2 rounded text-sm">
-								<div className="flex justify-between items-center mb-1">
-									<span className="font-medium text-foreground">{comment.author.name}</span>
-									<span className="text-xs text-muted-foreground">{new Date(comment.createdAt).toDateString()}</span>
+							<div key={comment.id} className="bg-muted/50 p-3 rounded-md text-sm flex gap-1">
+								<Avatar className="h-6 w-6">
+									<AvatarImage src={comment.author.image || ""} alt={comment.author.name || "User"} />
+									<AvatarFallback>{comment.author.name?.[0]?.toUpperCase() || "U"}</AvatarFallback>
+								</Avatar>
+								<div className="flex-1 space-y-1">
+									<div className="flex justify-between items-center">
+										<span className="font-semibold text-foreground">{comment.author.name}</span>
+										<span className="text-xs text-muted-foreground">{new Date(comment.createdAt).toLocaleDateString()}</span>
+									</div>
+									<p className="text-foreground leading-relaxed">{comment.content}</p>
 								</div>
-								<p className="text-foreground">{comment.content}</p>
 							</div>
 						))}
 
