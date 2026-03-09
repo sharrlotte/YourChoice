@@ -50,7 +50,7 @@ export function KanbanColumn({ projectId, status, title, onTaskClick, canManageL
 
 	return (
 		<div className="flex flex-col bg-muted/50 rounded-lg w-full min-w-80 h-full border overflow-hidden">
-			<div className="p-3 font-semibold text-foreground border-b bg-card rounded-t-lg sticky top-0 z-10 flex justify-between items-center shadow-sm">
+			<div className="p-3 font-semibold text-foreground border-b bg-card/20 rounded-t-lg sticky top-0 z-10 flex justify-between items-center shadow-sm">
 				<h2 className="text-sm">{title}</h2>
 				<Badge variant="secondary" className="px-2 py-0.5 rounded-full text-xs">
 					{tasks.length}
