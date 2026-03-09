@@ -5,7 +5,7 @@ import prisma from "@/lib/prisma";
 import { Role } from "@/app/generated/prisma";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { LayoutGrid, Settings } from "lucide-react";
+import { CircleQuestionMark, LayoutGrid, Settings } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { Metadata } from "next";
 import { Footer } from "@/components/layout/Footer";
@@ -69,6 +69,9 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
 							<p className="text-sm text-muted-foreground max-w-xl truncate">{project.description}</p>
 						</div>
 						<div className="ml-auto">
+							<Button variant="ghost" size="icon">
+								<CircleQuestionMark className="size-5" />
+							</Button>
 							{canManageLabels && (
 								<Link href={`/projects/${project.id}/settings`}>
 									<Button variant="ghost" size="icon">

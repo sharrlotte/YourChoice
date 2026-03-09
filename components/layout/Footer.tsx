@@ -7,7 +7,7 @@ export function Footer() {
 	return (
 		<div className="mt-4">
 			<footer className="border-t py-6 md:py-0 bg-card/20">
-				<div className="container flex flex-col items-center justify-between gap-4 md:h-16 md:flex-row px-4">
+				<div className="flex flex-col items-center justify-between gap-4 md:h-16 md:flex-row px-4 mx-auto">
 					<p className="text-sm text-muted-foreground text-center md:text-left">
 						© {new Date().getFullYear()} YourChoice. All rights reserved.
 					</p>

@@ -42,7 +42,6 @@ export function KanbanColumn({ projectId, status, title, onTaskClick, canManageL
 	});
 
 	useEffect(() => {
-		console.log(inView, hasNextPage);
 		if (inView && hasNextPage) {
 			fetchNextPage();
 		}
