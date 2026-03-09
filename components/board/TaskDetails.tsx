@@ -114,7 +114,7 @@ export function TaskDetails({ taskId, onClose }: TaskDetailsProps) {
 									</Avatar>
 									<span>{task.author.name}</span>
 									<span>•</span>
-									<span>{new Date(task.createdAt).toDateString()}</span>
+									<span>{new Date(task.createdAt).toLocaleDateString()}</span>
 									<span>•</span>
 									<Badge variant="outline" className="uppercase text-xs font-medium">
 										{task.status.replace(/_/g, " ")}
