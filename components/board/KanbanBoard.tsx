@@ -15,9 +15,9 @@ import { TaskDetails } from "./TaskDetails";
 const columns: { status: TaskStatus; title: string }[] = [
 	{ status: "PENDING_SUGGESTION", title: "Pending Suggestion" },
 	{ status: "ACCEPTED", title: "Accepted" },
-	{ status: "REJECTED", title: "Rejected" },
 	{ status: "IN_PROGRESS", title: "In Progress" },
 	{ status: "COMPLETED", title: "Completed" },
+	{ status: "REJECTED", title: "Rejected" },
 ];
 
 export function KanbanBoard({ projectId, canManageLabels }: { projectId: string; canManageLabels?: boolean }) {
