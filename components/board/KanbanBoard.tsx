@@ -243,7 +243,7 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 	return (
 		<div className="flex flex-col h-full">
 			<DndContext sensors={sensors} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
-				<div className="flex h-full gap-4 overflow-x-auto py-4 w-full">
+				<div className="flex h-full gap-3 overflow-x-auto py-4 w-full snap-x snap-mandatory">
 					{columns.map((col) => (
 						<KanbanColumn
 							key={col.status}
