@@ -127,7 +127,7 @@ export function CreateTaskForm({ projectId, canManageLabels }: { projectId: stri
 					</div>
 				</DialogHeader>
 				<form action={handleSubmit} className="space-y-4 mt-4">
-					<Input name="title" placeholder="Task Title" required />
+					<Input name="title" placeholder="Task Title" required minLength={10} max={2000}/>
 					<Textarea name="description" placeholder="Description (optional)" className="h-32" />
 
 					<div className="flex flex-wrap gap-2 items-center">
