@@ -53,17 +53,17 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
 	const canManageLabels = isDeveloper || isOwner;
 
 	return (
-		<div className="h-dvh overflow-y-scroll no-scrollbar">
-			<div className="flex flex-col h-full">
-				<header className="bg-card/20 border-b px-6 py-4 flex items-center shadow-sm gap-2">
+		<div className="overflow-y-scroll no-scrollbar">
+			<div className="h-dvh flex flex-col overflow-hidden">
+				<header className="bg-card/20 border-b px-6 py-4 flex items-center shadow-sm gap-2 h-16">
 					<LayoutGrid className="h-5 w-5 text-primary" />
 					<div className="flex items-center gap-4 ml-auto">
 						<ThemeToggle />
 						<UserMenu />
 					</div>
 				</header>
-				<main className="flex-1 flex flex-col overflow-hidden h-full px-6 py-4">
-					<div className="flex">
+				<div className="flex flex-1 flex-col px-6 py-4 overflow-hidden">
+					<div className="flex h-full overflow-hidden">
 						<div>
 							<h1 className="text-xl font-bold text-foreground">{project.name}</h1>
 							<p className="text-sm text-muted-foreground max-w-xl truncate">{project.description}</p>
@@ -82,7 +82,7 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
 						</div>
 					</div>
 					<KanbanBoard projectId={project.id} canManageLabels={canManageLabels} />
-				</main>
+				</div>
 			</div>
 			<Footer />
 		</div>
