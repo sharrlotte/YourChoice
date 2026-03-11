@@ -53,8 +53,8 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
 	const canManageLabels = isDeveloper || isOwner;
 
 	return (
-		<div className="overflow-y-scroll no-scrollbar">
-			<div className="h-dvh flex flex-col overflow-hidden">
+		<div className="overflow-y-scroll no-scrollbar flex flex-col">
+			<div className="h-dvh max-h-dvh grid grid-rows-[auto_1fr] overflow-hidden">
 				<header className="bg-card/20 border-b px-6 py-4 flex items-center shadow-sm gap-2 h-16">
 					<LayoutGrid className="h-5 w-5 text-primary" />
 					<div className="flex items-center gap-4 ml-auto">
@@ -62,8 +62,8 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
 						<UserMenu />
 					</div>
 				</header>
-				<div className="flex flex-1 flex-col px-6 py-4 overflow-hidden">
-					<div className="flex h-full overflow-hidden">
+				<div className="grid grid-rows-[1fr_auto] px-6 py-4 h-full min-h-0">
+					<div className="flex h-full">
 						<div>
 							<h1 className="text-xl font-bold text-foreground">{project.name}</h1>
 							<p className="text-sm text-muted-foreground max-w-xl truncate">{project.description}</p>
