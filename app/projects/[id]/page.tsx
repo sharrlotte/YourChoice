@@ -62,7 +62,7 @@ export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
 						<UserMenu />
 					</div>
 				</header>
-				<div className="grid grid-rows-[1fr_auto] px-6 py-4 h-full min-h-0">
+				<div className="grid grid-rows-[auto_1fr] px-6 py-4 h-full min-h-0">
 					<div className="flex h-full">
 						<div>
 							<h1 className="text-xl font-bold text-foreground">{project.name}</h1>
