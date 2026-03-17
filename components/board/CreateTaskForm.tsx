@@ -84,13 +84,13 @@ export function CreateTaskForm({ projectId, canManageLabels }: { projectId: stri
 			console.error("Failed to create task:", err);
 			toast.error("Failed to create task");
 		},
-		onSettled: () => {
-			queryClient.invalidateQueries({ queryKey: ["tasks", projectId] });
-		},
 		onSuccess: () => {
 			setIsOpen(false);
 			setSelectedLabels([]);
 			toast.success("Task created");
+		},
+		onSettled: () => {
+			queryClient.invalidateQueries({ queryKey: ["tasks", projectId] });
 		},
 	});
 

@@ -1,10 +1,11 @@
 "use client";
 
-import { createComment, getComments } from "@/app/actions/comments";
+import { createComment } from "@/app/actions/comments";
+import { useTaskComments } from "@/hooks/useTaskComments";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupText, InputGroupTextarea } from "@/components/ui/input-group";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User } from "@/app/generated/prisma";
-import { useInfiniteQuery } from "@tanstack/react-query";
+
 import { Loader2 } from "lucide-react";
 import { useSession } from "@/lib/auth-client";
 import { useEffect, useOptimistic, useState, useTransition } from "react";
@@ -31,15 +32,7 @@ export function CommentSection({ taskId }: CommentSectionProps) {
 	const [isPending, startTransition] = useTransition();
 	const { ref, inView } = useInView();
 
-	const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } = useInfiniteQuery({
-		queryKey: ["comments", taskId],
-		queryFn: async ({ pageParam }) => {
-			const res = await getComments(taskId, pageParam as string | undefined);
-			return res;
-		},
-		initialPageParam: undefined as string | undefined,
-		getNextPageParam: (lastPage) => lastPage.nextCursor,
-	});
+	const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } = useTaskComments(taskId);
 
 	useEffect(() => {
 		if (inView && hasNextPage) {
