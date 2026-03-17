@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
+import { useTaskComments } from "@/hooks/useTaskComments";
 import { useSession } from "@/lib/auth-client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Pencil, X } from "lucide-react";
@@ -37,6 +38,8 @@ export function TaskDetails({ taskId, onClose }: TaskDetailsProps) {
 		queryKey: ["task", taskId],
 		queryFn: () => getTaskDetails(taskId),
 	});
+
+    useTaskComments(taskId);
 
 	const isDeveloper = (session?.user as any)?.role === "DEVELOPER";
 	const isProjectOwner = task?.project?.ownerId === session?.user?.id;
