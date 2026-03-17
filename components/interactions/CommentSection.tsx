@@ -11,6 +11,7 @@ import { useSession } from "@/lib/auth-client";
 import { useEffect, useOptimistic, useState, useTransition } from "react";
 import { useInView } from "react-intersection-observer";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface CommentWithAuthor {
 	id: string;
@@ -27,6 +28,7 @@ interface CommentSectionProps {
 }
 
 export function CommentSection({ taskId }: CommentSectionProps) {
+	const queryClient = useQueryClient();
 	const { data: session } = useSession();
 	const [content, setContent] = useState("");
 	const [isPending, startTransition] = useTransition();
@@ -75,6 +77,7 @@ export function CommentSection({ taskId }: CommentSectionProps) {
 			try {
 				await createComment(taskId, formData);
 				setContent("");
+				await queryClient.invalidateQueries({ queryKey: ["comments", taskId] });
 				toast.success("Comment posted");
 			} catch (error) {
 				console.error("Failed to add comment:", error);
