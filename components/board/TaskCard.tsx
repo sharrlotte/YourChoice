@@ -45,7 +45,7 @@ export function TaskCard({ task, onClick, disabled }: TaskCardProps) {
 		<Card
 			ref={setNodeRef}
 			style={style}
-			className={`mb-2 group relative hover:shadow-md transition-shadow cursor-pointer border-l-4 ${borderColor} select-none`}
+			className={`mb-2 group relative shadow-md transition-shadow cursor-pointer border-l-4 ${borderColor} select-none`}
 			onClick={onClick}
 		>
 			<CardHeader className="p-3 pb-0 flex flex-row items-start justify-between space-y-0">
