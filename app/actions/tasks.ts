@@ -84,33 +84,48 @@ export async function createTask(projectId: string, formData: FormData) {
 				connect: labelIds.map((id) => ({ id })),
 			},
 		},
+		include: {
+			author: true,
+		},
 	});
 
 	await eventPublisher.publish("TaskCreated", { taskId: task.id, title: task.title });
 
 	// Send email notification to project owner
-	const project = await prisma.project.findUnique({
+	const project = await prisma.project.findUniqueOrThrow({
 		where: { id: projectId },
 		include: { owner: true },
 	});
 
-	if (project?.owner.email && project.owner.email !== session.user.email && env.RESEND_API_KEY) {
-		try {
-			await resend.emails.send({
-				from: env.EMAIL_FROM,
-				to: project.owner.email,
-				subject: `New Task: ${task.title}`,
-				react: TaskCreatedEmail({
-					authorName: session.user.name || "A user",
-					taskTitle: task.title,
-					taskDescription: task.description || "",
-					taskUrl: `${env.APP_URL}/projects/${projectId}?task=${task.id}`,
-					projectName: project.name,
-				}),
-			});
-		} catch (error) {
-			console.error("Failed to send email", error);
-		}
+	const emailsToSend: Set<string> = new Set();
+
+	if (project.owner.email) {
+		emailsToSend.add(project.owner.email);
+	}
+
+	if (session.user.email) {
+		emailsToSend.add(session.user.email);
+	}
+
+	if (task.author.email) {
+		emailsToSend.add(task.author.email);
+	}
+
+	try {
+		await resend.emails.send({
+			from: env.EMAIL_FROM,
+			to: [...emailsToSend],
+			subject: `New Task: ${task.title}`,
+			react: TaskCreatedEmail({
+				authorName: session.user.name || "A user",
+				taskTitle: task.title,
+				taskDescription: task.description || "",
+				taskUrl: `${env.APP_URL}/projects/${projectId}?task=${task.id}`,
+				projectName: project.name,
+			}),
+		});
+	} catch (error) {
+		console.error("Failed to send email", error);
 	}
 
 	revalidatePath(`/projects/${projectId}`);
