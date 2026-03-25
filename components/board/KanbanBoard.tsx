@@ -11,6 +11,7 @@ import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { TaskCard } from "./TaskCard";
 import { TaskDetails } from "./TaskDetails";
+import { useQueryState } from "nuqs";
 
 const columns: { status: TaskStatus; title: string }[] = [
 	{ status: "PENDING_SUGGESTION", title: "Pending Suggestion" },
@@ -23,7 +24,7 @@ const columns: { status: TaskStatus; title: string }[] = [
 export function KanbanBoard({ projectId, canManageLabels }: { projectId: string; canManageLabels?: boolean }) {
 	const queryClient = useQueryClient();
 	const [activeTask, setActiveTask] = useState<any>(null);
-	const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+	const [selectedTaskId, setSelectedTaskId] = useQueryState("taskId");
 	const [mounted, setMounted] = useState(false);
 
 	useEffect(() => {
@@ -171,12 +172,14 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 
 		if (!over) {
 			setActiveTask(null);
+			toast.warning("Please drop the task in a column");
 			return;
 		}
 
 		const activeTask = active.data.current?.task;
 		if (!activeTask) {
 			setActiveTask(null);
+			toast.warning("No active task to move");
 			return;
 		}
 

@@ -38,6 +38,7 @@ export async function getComments(taskId: string, cursor?: string) {
 
 export async function createComment(taskId: string, formData: FormData) {
 	const session = await getSession();
+
 	if (!session?.user) {
 		throw new Error("Unauthorized");
 	}
@@ -51,7 +52,11 @@ export async function createComment(taskId: string, formData: FormData) {
 		where: { id: taskId },
 		include: {
 			author: true,
-			project: true,
+			project: {
+				include: {
+					owner: true,
+				},
+			},
 		},
 	});
 
@@ -72,52 +77,35 @@ export async function createComment(taskId: string, formData: FormData) {
 
 	await eventPublisher.publish("CommentAdded", { taskId, commentId: comment.id });
 
-	// Send email to task author if they are not the one commenting
-	if (env.RESEND_API_KEY) {
-		const emailsToSend = [];
+	const emailsToSend: Set<string> = new Set();
 
-		// Email to task author
-		if (task.author.email && task.authorId !== session.user.id) {
-			emailsToSend.push({
-				to: task.author.email,
-				subject: `New Comment on ${task.title}`,
-				react: NewCommentEmail({
-					authorName: session.user.name || "A user",
-					taskTitle: task.title,
-					commentContent: content,
-					taskUrl: `${env.APP_URL}/projects/${task.projectId}?task=${taskId}`,
-					projectName: task.project.name,
-				}),
-			});
-		}
+	if (task.author.email) {
+		emailsToSend.add(task.author.email);
+	}
 
-		// Email to comment author (confirmation)
-		if (session.user.email) {
-			emailsToSend.push({
-				to: session.user.email,
-				subject: `You commented on ${task.title}`,
-				react: NewCommentEmail({
-					authorName: "You",
-					taskTitle: task.title,
-					commentContent: content,
-					taskUrl: `${env.APP_URL}/projects/${task.projectId}?task=${taskId}`,
-					projectName: task.project.name,
-				}),
-			});
-		}
+	if (task.project.owner.email) {
+		emailsToSend.add(task.project.owner.email);
+	}
 
-		try {
-			await Promise.all(
-				emailsToSend.map((email) =>
-					resend.emails.send({
-						from: env.EMAIL_FROM,
-						...email,
-					}),
-				),
-			);
-		} catch (error) {
-			console.error("Failed to send email", error);
-		}
+	if (session.user.email) {
+		emailsToSend.add(session.user.email);
+	}
+
+	try {
+		await resend.emails.send({
+			from: env.EMAIL_FROM,
+			to: [...emailsToSend],
+			subject: `New comment on ${task.title}`,
+			react: NewCommentEmail({
+				authorName: session.user.name || "A user",
+				taskTitle: task.title,
+				commentContent: content,
+				taskUrl: `${env.APP_URL}/projects/${task.projectId}?task=${taskId}`,
+				projectName: task.project.name,
+			}),
+		});
+	} catch (error) {
+		console.error("Failed to send email", error);
 	}
 
 	revalidatePath(`/projects/${task.projectId}`);

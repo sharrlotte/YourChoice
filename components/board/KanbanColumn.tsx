@@ -3,7 +3,6 @@
 import { getTasks } from "@/app/actions/tasks";
 import { CreateTaskForm } from "@/components/board/CreateTaskForm";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { TaskWithRelations } from "@/types";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
