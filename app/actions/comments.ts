@@ -12,9 +12,17 @@ const COMMENTS_PER_PAGE = 10;
 
 export async function getComments(taskId: string, cursor?: string) {
 	const comments = await prisma.comment.findMany({
-		where: { taskId },
+		where: { taskId, parentId: null },
 		include: {
 			author: true,
+			replies: {
+				include: {
+					author: true,
+				},
+				orderBy: {
+					createdAt: "asc",
+				},
+			},
 		},
 		orderBy: {
 			createdAt: "desc",
@@ -44,6 +52,8 @@ export async function createComment(taskId: string, formData: FormData) {
 	}
 
 	const content = formData.get("content") as string;
+	const parentId = formData.get("parentId") as string | null;
+
 	if (!content) {
 		throw new Error("Content is required");
 	}
@@ -69,9 +79,15 @@ export async function createComment(taskId: string, formData: FormData) {
 			content,
 			taskId,
 			authorId: session.user.id,
+			parentId: parentId || null,
 		},
 		include: {
 			author: true,
+			parent: {
+				include: {
+					author: true,
+				},
+			},
 		},
 	});
 
@@ -89,6 +105,10 @@ export async function createComment(taskId: string, formData: FormData) {
 
 	if (session.user.email) {
 		emailsToSend.add(session.user.email);
+	}
+
+	if (comment.parent?.author?.email) {
+		emailsToSend.add(comment.parent.author.email);
 	}
 
 	try {
