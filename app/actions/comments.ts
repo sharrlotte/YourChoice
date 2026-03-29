@@ -100,7 +100,7 @@ export async function createComment(taskId: string, formData: FormData) {
 				authorName: session.user.name || "A user",
 				taskTitle: task.title,
 				commentContent: content,
-				taskUrl: `${env.APP_URL}/projects/${task.projectId}?task=${taskId}`,
+				taskUrl: `${env.APP_URL}/projects/${task.projectId}?taskId=${taskId}`,
 				projectName: task.project.name,
 			}),
 		});
