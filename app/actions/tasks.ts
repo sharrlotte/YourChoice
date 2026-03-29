@@ -120,7 +120,7 @@ export async function createTask(projectId: string, formData: FormData) {
 				authorName: session.user.name || "A user",
 				taskTitle: task.title,
 				taskDescription: task.description || "",
-				taskUrl: `${env.APP_URL}/projects/${projectId}?task=${task.id}`,
+				taskUrl: `${env.APP_URL}/projects/${projectId}?taskId=${task.id}`,
 				projectName: project.name,
 			}),
 		});
