@@ -13,11 +13,29 @@ const COMMENTS_PER_PAGE = 10;
 export async function getComments(taskId: string, cursor?: string) {
 	const comments = await prisma.comment.findMany({
 		where: { taskId, parentId: null },
-		include: {
-			author: true,
+		select: {
+			id: true,
+			content: true,
+			taskId: true,
+			authorId: true,
+			parentId: true,
+			createdAt: true,
+			updatedAt: true,
+			author: {
+				select: { id: true, name: true, email: true, image: true },
+			},
 			replies: {
-				include: {
-					author: true,
+				select: {
+					id: true,
+					content: true,
+					taskId: true,
+					authorId: true,
+					parentId: true,
+					createdAt: true,
+					updatedAt: true,
+					author: {
+						select: { id: true, name: true, email: true, image: true },
+					},
 				},
 				orderBy: {
 					createdAt: "asc",

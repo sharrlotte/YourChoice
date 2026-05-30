@@ -14,28 +14,27 @@ const ITEMS_PER_PAGE = 10;
 export async function getTasks(projectId: string, status: TaskStatus, page: number = 1) {
 	const session = await getSession();
 	const userId = session?.user?.id;
-
 	const skip = (page - 1) * ITEMS_PER_PAGE;
 
 	const tasks = await prisma.task.findMany({
-		where: {
-			projectId,
-			status,
-		},
-		include: {
-			author: true,
-			labels: true,
-			_count: {
-				select: {
-					votes: true,
-					comments: true,
-				},
+		where: { projectId, status },
+		select: {
+			id: true,
+			title: true,
+			description: true,
+			status: true,
+			index: true,
+			projectId: true,
+			authorId: true,
+			createdAt: true,
+			updatedAt: true,
+			author: {
+				select: { id: true, name: true, email: true, image: true },
 			},
+			labels: true,
 			votes: {
-				where: {
-					userId: userId ?? "undefined",
-					status: status,
-				},
+				where: { userId: userId ?? "undefined", status },
+				select: { id: true },
 			},
 		},
 		orderBy: { index: "asc" },
@@ -43,7 +42,31 @@ export async function getTasks(projectId: string, status: TaskStatus, page: numb
 		skip,
 	});
 
-	return tasks;
+	const taskIds = tasks.map((t) => t.id);
+
+	const [voteCounts, commentCounts] = await Promise.all([
+		prisma.vote.groupBy({
+			by: ["taskId"],
+			where: { taskId: { in: taskIds } },
+			_count: true,
+		}),
+		prisma.comment.groupBy({
+			by: ["taskId"],
+			where: { taskId: { in: taskIds } },
+			_count: true,
+		}),
+	]);
+
+	const voteMap = Object.fromEntries(voteCounts.map((v) => [v.taskId, v._count]));
+	const commentMap = Object.fromEntries(commentCounts.map((c) => [c.taskId, c._count]));
+
+	return tasks.map((t) => ({
+		...t,
+		_count: {
+			votes: voteMap[t.id] ?? 0,
+			comments: commentMap[t.id] ?? 0,
+		},
+	}));
 }
 
 export async function createTask(projectId: string, formData: FormData) {
@@ -60,15 +83,17 @@ export async function createTask(projectId: string, formData: FormData) {
 		throw new Error("Title is required");
 	}
 
-	const minIndexTask = await prisma.task.findFirst({
-		where: {
-			projectId,
-			status: TaskStatus.PENDING_SUGGESTION,
-		},
-		orderBy: {
-			index: "asc",
-		},
-	});
+	const [minIndexTask, project] = await Promise.all([
+		prisma.task.findFirst({
+			where: { projectId, status: TaskStatus.PENDING_SUGGESTION },
+			orderBy: { index: "asc" },
+			select: { index: true },
+		}),
+		prisma.project.findUniqueOrThrow({
+			where: { id: projectId },
+			select: { id: true, name: true, owner: { select: { email: true } } },
+		}),
+	]);
 
 	const newIndex = minIndexTask && !isNaN(minIndexTask.index) ? minIndexTask.index / 2 : 1000;
 
@@ -84,18 +109,23 @@ export async function createTask(projectId: string, formData: FormData) {
 				connect: labelIds.map((id) => ({ id })),
 			},
 		},
-		include: {
-			author: true,
+		select: {
+			id: true,
+			title: true,
+			description: true,
+			status: true,
+			index: true,
+			projectId: true,
+			authorId: true,
+			createdAt: true,
+			updatedAt: true,
+			author: {
+				select: { id: true, name: true, email: true, image: true },
+			},
 		},
 	});
 
 	await eventPublisher.publish("TaskCreated", { taskId: task.id, title: task.title });
-
-	// Send email notification to project owner
-	const project = await prisma.project.findUniqueOrThrow({
-		where: { id: projectId },
-		include: { owner: true },
-	});
 
 	const emailsToSend: Set<string> = new Set();
 
@@ -137,7 +167,15 @@ export async function updateTaskStatus(taskId: string, newStatus: TaskStatus, ne
 
 	const task = await prisma.task.findUnique({
 		where: { id: taskId },
-		include: { project: true },
+		select: {
+			id: true,
+			status: true,
+			index: true,
+			projectId: true,
+			project: {
+				select: { ownerId: true },
+			},
+		},
 	});
 
 	if (!task) {
@@ -189,7 +227,14 @@ export async function updateTaskDetails(taskId: string, formData: FormData) {
 
 	const task = await prisma.task.findUnique({
 		where: { id: taskId },
-		include: { project: true },
+		select: {
+			id: true,
+			authorId: true,
+			projectId: true,
+			project: {
+				select: { ownerId: true },
+			},
+		},
 	});
 	if (!task) throw new Error("Task not found");
 
@@ -214,34 +259,53 @@ export async function updateTaskDetails(taskId: string, formData: FormData) {
 export async function getTaskDetails(taskId: string) {
 	const session = await getSession();
 	const userId = session?.user?.id;
+	const [task, voteCount] = await Promise.all([
+		prisma.task.findUnique({
+			where: { id: taskId },
+			select: {
+				id: true,
+				title: true,
+				description: true,
+				status: true,
+				index: true,
+				projectId: true,
+				authorId: true,
+				createdAt: true,
+				updatedAt: true,
+				author: {
+					select: { id: true, name: true, email: true, image: true },
+				},
+				labels: true,
+				project: {
+					select: { ownerId: true },
+				},
+				reactions: {
+					select: {
+						id: true,
+						emoji: true,
+						taskId: true,
+						userId: true,
+						createdAt: true,
+						user: {
+							select: { id: true, name: true, image: true },
+						},
+					},
+				},
+				votes: {
+					where: { userId: userId ?? "undefined" },
+					select: { id: true },
+				},
+			},
+		}),
+		prisma.vote.count({
+			where: { taskId },
+		}),
+	]);
 
-	const task = await prisma.task.findUnique({
-		where: { id: taskId },
-		include: {
-			author: true,
-			labels: true,
-			project: {
-				select: {
-					ownerId: true,
-				},
-			},
-			reactions: {
-				include: {
-					user: true,
-				},
-			},
-			votes: {
-				where: {
-					userId: userId ?? "undefined",
-				},
-			},
-			_count: {
-				select: {
-					votes: true,
-				},
-			},
-		},
-	});
+	if (!task) return null;
 
-	return task;
+	return {
+		...task,
+		_count: { votes: voteCount },
+	};
 }

@@ -13,20 +13,19 @@ export async function toggleVote(taskId: string) {
 
 	const task = await prisma.task.findUnique({
 		where: { id: taskId },
+		select: { id: true, status: true, projectId: true },
 	});
 
 	if (!task) {
 		throw new Error("Task not found");
 	}
 
-	const currentStatus = task.status;
-
 	const existingVote = await prisma.vote.findUnique({
 		where: {
 			taskId_userId_status: {
 				taskId,
 				userId: session.user.id,
-				status: currentStatus,
+				status: task.status,
 			},
 		},
 	});
@@ -40,7 +39,7 @@ export async function toggleVote(taskId: string) {
 			data: {
 				taskId,
 				userId: session.user.id,
-				status: currentStatus,
+				status: task.status,
 			},
 		});
 		await eventPublisher.publish("TaskVoted", { taskId, userId: session.user.id });

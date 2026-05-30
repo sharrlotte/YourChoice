@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 
-import { createProject } from "@/app/actions/projects";
+import { createProject, getProjects } from "@/app/actions/projects";
 import { ProjectCard } from "@/components/board/ProjectCard";
 import { CreateProjectDialog } from "@/components/board/CreateProjectDialog";
 import { UserMenu } from "@/components/layout/UserMenu";
@@ -8,7 +8,6 @@ import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { getSession } from "@/lib/auth";
 import { getErrorMessage, logServerError } from "@/lib/logger";
-import prisma from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { LayoutGrid } from "lucide-react";
 import { SignInButton } from "@/components/auth/SignInButton";
@@ -20,13 +19,7 @@ function isRedirectError(error: unknown) {
 
 export default async function Home() {
 	const session = await getSession();
-	const projects = await prisma.project.findMany({
-		orderBy: { createdAt: "desc" },
-		include: {
-			_count: { select: { tasks: true } },
-			owner: true,
-		},
-	});
+	const projects = await getProjects();
 
 	return (
 		<div className="h-screen overflow-y-scroll no-scrollbar bg-background">

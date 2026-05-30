@@ -1,19 +1,15 @@
-import { createProject } from "@/app/actions/projects";
+import { createProject, getProjectsSimple } from "@/app/actions/projects";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { getSession } from "@/lib/auth";
-import prisma from "@/lib/prisma";
 import { Role } from "@/app/generated/prisma";
 import Link from "next/link";
 import { Footer } from "@/components/layout/Footer";
 
 export default async function ProjectsPage() {
 	const session = await getSession();
-	const projects = await prisma.project.findMany({
-		orderBy: { createdAt: "desc" },
-		include: { _count: { select: { tasks: true } } },
-	});
+	const projects = await getProjectsSimple();
 
 	const isDeveloper = (session?.user?.role as any) === Role.DEVELOPER;
 

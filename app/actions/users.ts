@@ -9,7 +9,6 @@ export async function getUsers(page = 1, limit = 10) {
 	if (!session || session.user.role !== "DEVELOPER") {
 		throw new Error("Unauthorized");
 	}
-
 	const skip = (page - 1) * limit;
 
 	const [users, total] = await Promise.all([
@@ -35,7 +34,6 @@ export async function getUserStats() {
 	if (!session || session.user.role !== "DEVELOPER") {
 		throw new Error("Unauthorized");
 	}
-
 	const thirtyDaysAgo = new Date();
 	thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -50,10 +48,8 @@ export async function getUserStats() {
 		},
 	});
 
-	// Group by day
 	const stats: Record<string, number> = {};
 
-	// Initialize last 30 days with 0
 	for (let i = 0; i < 30; i++) {
 		const date = new Date();
 		date.setDate(date.getDate() - i);

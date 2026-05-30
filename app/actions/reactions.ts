@@ -11,23 +11,25 @@ export async function toggleReaction(taskId: string, emoji: string) {
 		throw new Error("Unauthorized");
 	}
 
-	const task = await prisma.task.findUnique({
-		where: { id: taskId },
-	});
+	const [task, existingReaction] = await Promise.all([
+		prisma.task.findUnique({
+			where: { id: taskId },
+			select: { id: true, projectId: true },
+		}),
+		prisma.reaction.findUnique({
+			where: {
+				taskId_userId_emoji: {
+					taskId,
+					userId: session.user.id,
+					emoji,
+				},
+			},
+		}),
+	]);
 
 	if (!task) {
 		throw new Error("Task not found");
 	}
-
-	const existingReaction = await prisma.reaction.findUnique({
-		where: {
-			taskId_userId_emoji: {
-				taskId,
-				userId: session.user.id,
-				emoji,
-			},
-		},
-	});
 
 	if (existingReaction) {
 		await prisma.reaction.delete({
