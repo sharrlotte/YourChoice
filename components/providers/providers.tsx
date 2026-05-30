@@ -6,7 +6,18 @@ import { useState } from "react";
 import { ThemeProvider } from "./theme-provider";
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  const [queryClient] = useState(() => new QueryClient());
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 30_000,
+            gcTime: 5 * 60_000,
+            refetchOnWindowFocus: false,
+          },
+        },
+      })
+  );
 
   return (
       <QueryClientProvider client={queryClient}>

@@ -6,6 +6,23 @@ import { Role } from "@/app/generated/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+export async function getProjects() {
+	return prisma.project.findMany({
+		orderBy: { createdAt: "desc" },
+		include: {
+			_count: { select: { tasks: true } },
+			owner: true,
+		},
+	});
+}
+
+export async function getProjectsSimple() {
+	return prisma.project.findMany({
+		orderBy: { createdAt: "desc" },
+		include: { _count: { select: { tasks: true } } },
+	});
+}
+
 export async function createProject(formData: FormData) {
 	const session = await getSession();
 

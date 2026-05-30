@@ -9,7 +9,7 @@ import { Plus } from "lucide-react";
 import { useState, useTransition } from "react";
 
 interface ReactionWithUser extends Reaction {
-	user: User;
+	user: Pick<User, "id" | "name" | "image">;
 }
 
 interface ReactionPickerProps {

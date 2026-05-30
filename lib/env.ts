@@ -39,4 +39,5 @@ export const env = {
   RESEND_API_KEY: optional("RESEND_API_KEY"),
   EMAIL_FROM: optional("EMAIL_FROM") || "onboarding@resend.dev",
   APP_URL: optional("NEXT_PUBLIC_BETTER_AUTH_URL") || "http://localhost:3000",
+  SLOW_QUERY_THRESHOLD_MS: parseInt(optional("SLOW_QUERY_THRESHOLD_MS") || "500", 10),
 };

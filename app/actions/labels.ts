@@ -53,7 +53,14 @@ export async function assignLabel(taskId: string, labelId: string) {
 
 	const task = await prisma.task.findUnique({
 		where: { id: taskId },
-		include: { project: true },
+		select: {
+			id: true,
+			authorId: true,
+			projectId: true,
+			project: {
+				select: { ownerId: true },
+			},
+		},
 	});
 
 	if (!task) {
@@ -89,7 +96,14 @@ export async function removeLabel(taskId: string, labelId: string) {
 
 	const task = await prisma.task.findUnique({
 		where: { id: taskId },
-		include: { project: true },
+		select: {
+			id: true,
+			authorId: true,
+			projectId: true,
+			project: {
+				select: { ownerId: true },
+			},
+		},
 	});
 
 	if (!task) {
