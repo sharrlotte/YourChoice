@@ -9,6 +9,9 @@ const globalForPrisma = global as unknown as {
 	prisma: PrismaClient;
 };
 
+// Enable HTTP fetch mode for edge environments (Cloudflare Workers) to prevent hanging WebSockets
+neonConfig.poolQueryViaFetch = true;
+
 if (typeof WebSocket === "undefined") {
 	neonConfig.webSocketConstructor = ws;
 }
