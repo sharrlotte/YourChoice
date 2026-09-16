@@ -1,7 +1,7 @@
 "use client";
 
 import { toggleReaction } from "@/app/actions/reactions";
-import { Reaction, User } from "@/app/generated/prisma";
+import type { Reaction, User } from "@/types";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";

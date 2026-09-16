@@ -2,12 +2,11 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { TaskWithRelations } from "@/types";
+import { TaskStatus, type TaskWithRelations } from "@/types";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, MessageSquare, ThumbsUp } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { TaskStatus } from "@/app/generated/prisma";
 
 const statusColors: Record<TaskStatus, string> = {
 	PENDING_SUGGESTION: "border-l-orange-500",

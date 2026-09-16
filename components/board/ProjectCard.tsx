@@ -2,7 +2,7 @@
 
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Project, User } from "@/app/generated/prisma";
+import type { Project, User } from "@/types";
 import Link from "next/link";
 
 interface ProjectCardProps {

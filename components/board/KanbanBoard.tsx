@@ -2,7 +2,7 @@
 
 import { updateTaskStatus } from "@/app/actions/tasks";
 import { KanbanColumn } from "@/components/board/KanbanColumn";
-import { TaskStatus } from "@/app/generated/prisma";
+import type { TaskStatus } from "@/types";
 import { DndContext, DragEndEvent, DragOverlay, DragOverEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { useMutation, useQueryClient } from "@tanstack/react-query";

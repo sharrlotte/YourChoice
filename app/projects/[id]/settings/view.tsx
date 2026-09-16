@@ -1,6 +1,6 @@
 "use client";
 
-import { Project } from "@/app/generated/prisma";
+import type { Project } from "@/types";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

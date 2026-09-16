@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { TaskWithRelations } from "@/types";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { TaskStatus } from "@/app/generated/prisma";
+import type { TaskStatus } from "@/types";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useInView } from "react-intersection-observer";

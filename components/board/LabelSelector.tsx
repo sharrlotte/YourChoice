@@ -3,7 +3,7 @@
 import { assignLabel, removeLabel, getLabels } from "@/app/actions/labels";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Label as PrismaLabel } from "@/app/generated/prisma";
+import type { Label as PrismaLabel } from "@/types";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Tag } from "lucide-react";
 import { useState, useTransition } from "react";

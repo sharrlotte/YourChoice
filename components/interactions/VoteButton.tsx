@@ -1,6 +1,6 @@
 "use client";
 
-import { TaskStatus } from "@/app/generated/prisma";
+import { TaskStatus } from "@/types";
 import { toggleVote } from "@/app/actions/votes";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";

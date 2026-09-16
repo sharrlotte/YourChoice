@@ -4,7 +4,7 @@ import { createComment } from "@/app/actions/comments";
 import { useTaskComments } from "@/hooks/useTaskComments";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupText, InputGroupTextarea } from "@/components/ui/input-group";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User } from "@/app/generated/prisma";
+import type { User } from "@/types";
 
 import { Loader2, Reply } from "lucide-react";
 import { useSession } from "@/lib/auth-client";

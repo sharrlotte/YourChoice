@@ -30,3 +30,9 @@ pnpm-debug.log*
 next-env.d.ts
 generated
 archive/
+/dist/
+.vinext/
+.wrangler/
+.dev.vars*
+
+wrangler.jsonc
