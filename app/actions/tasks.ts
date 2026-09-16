@@ -9,247 +9,19 @@ import { eventPublisher } from "@/lib/events";
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
+import { formatErrorMessage } from "@/lib/errors";
+import { logServerError } from "@/lib/logger";
+
 const ITEMS_PER_PAGE = 10;
 
 export async function getTasks(projectId: string, status: TaskStatus, page: number = 1) {
-	const session = await getSession();
-	const userId = session?.user?.id;
-	const skip = (page - 1) * ITEMS_PER_PAGE;
-
-	const tasks = await prisma.task.findMany({
-		where: { projectId, status },
-		select: {
-			id: true,
-			title: true,
-			description: true,
-			status: true,
-			index: true,
-			projectId: true,
-			authorId: true,
-			createdAt: true,
-			updatedAt: true,
-			author: {
-				select: { id: true, name: true, email: true, image: true },
-			},
-			labels: true,
-			votes: {
-				where: { userId: userId ?? "undefined", status },
-				select: { id: true },
-			},
-		},
-		orderBy: { index: "asc" },
-		take: ITEMS_PER_PAGE,
-		skip,
-	});
-
-	const taskIds = tasks.map((t) => t.id);
-
-	const [voteCounts, commentCounts] = await Promise.all([
-		prisma.vote.groupBy({
-			by: ["taskId"],
-			where: { taskId: { in: taskIds } },
-			_count: true,
-		}),
-		prisma.comment.groupBy({
-			by: ["taskId"],
-			where: { taskId: { in: taskIds } },
-			_count: true,
-		}),
-	]);
-
-	const voteMap = Object.fromEntries(voteCounts.map((v) => [v.taskId, v._count]));
-	const commentMap = Object.fromEntries(commentCounts.map((c) => [c.taskId, c._count]));
-
-	return tasks.map((t) => ({
-		...t,
-		_count: {
-			votes: voteMap[t.id] ?? 0,
-			comments: commentMap[t.id] ?? 0,
-		},
-	}));
-}
-
-export async function createTask(projectId: string, formData: FormData) {
-	const session = await getSession();
-	if (!session?.user) {
-		throw new Error("Unauthorized");
-	}
-
-	const title = formData.get("title") as string;
-	const description = formData.get("description") as string;
-	const labelIds = formData.getAll("labels") as string[];
-
-	if (!title) {
-		throw new Error("Title is required");
-	}
-
-	const [minIndexTask, project] = await Promise.all([
-		prisma.task.findFirst({
-			where: { projectId, status: TaskStatus.PENDING_SUGGESTION },
-			orderBy: { index: "asc" },
-			select: { index: true },
-		}),
-		prisma.project.findUniqueOrThrow({
-			where: { id: projectId },
-			select: { id: true, name: true, owner: { select: { email: true } } },
-		}),
-	]);
-
-	const newIndex = minIndexTask && !isNaN(minIndexTask.index) ? minIndexTask.index / 2 : 1000;
-
-	const task = await prisma.task.create({
-		data: {
-			title,
-			description,
-			projectId,
-			authorId: session.user.id,
-			status: TaskStatus.PENDING_SUGGESTION,
-			index: newIndex,
-			labels: {
-				connect: labelIds.map((id) => ({ id })),
-			},
-		},
-		select: {
-			id: true,
-			title: true,
-			description: true,
-			status: true,
-			index: true,
-			projectId: true,
-			authorId: true,
-			createdAt: true,
-			updatedAt: true,
-			author: {
-				select: { id: true, name: true, email: true, image: true },
-			},
-		},
-	});
-
-	await eventPublisher.publish("TaskCreated", { taskId: task.id, title: task.title });
-
-	const emailsToSend: Set<string> = new Set();
-
-	if (project.owner.email) {
-		emailsToSend.add(project.owner.email);
-	}
-
-	if (session.user.email) {
-		emailsToSend.add(session.user.email);
-	}
-
-	if (task.author.email) {
-		emailsToSend.add(task.author.email);
-	}
-
 	try {
-		await resend.emails.send({
-			from: env.EMAIL_FROM,
-			to: [...emailsToSend],
-			subject: `New Task: ${task.title}`,
-			react: TaskCreatedEmail({
-				authorName: session.user.name || "A user",
-				taskTitle: task.title,
-				taskDescription: task.description || "",
-				taskUrl: `${env.APP_URL}/projects/${projectId}?taskId=${task.id}`,
-				projectName: project.name,
-			}),
-		});
-	} catch (error) {
-		console.error("Failed to send email", error);
-	}
+		const session = await getSession();
+		const userId = session?.user?.id;
+		const skip = (page - 1) * ITEMS_PER_PAGE;
 
-	revalidatePath(`/projects/${projectId}`);
-	return task;
-}
-
-export async function updateTaskStatus(taskId: string, newStatus: TaskStatus, newIndex: number) {
-	const session = await getSession();
-
-	const task = await prisma.task.findUnique({
-		where: { id: taskId },
-		select: {
-			id: true,
-			status: true,
-			index: true,
-			projectId: true,
-			project: {
-				select: { ownerId: true },
-			},
-		},
-	});
-
-	if (!task) {
-		throw new Error("Task not found");
-	}
-
-	if (!session?.user || (session.user.role !== "DEVELOPER" && task.project.ownerId !== session.user.id)) {
-		throw new Error("Unauthorized: Only project owners or developers can move tasks");
-	}
-
-	const oldStatus = task.status;
-	const oldIndex = task.index;
-
-	if (oldStatus !== newStatus || oldIndex !== newIndex) {
-		const safeIndex = typeof newIndex === "number" && !isNaN(newIndex) ? newIndex : oldIndex || 1000;
-		await prisma.task.update({
-			where: { id: taskId },
-			data: {
-				status: newStatus,
-				index: safeIndex,
-			},
-		});
-
-		if (oldStatus !== newStatus) {
-			await eventPublisher.publish("TaskStatusChanged", { taskId, oldStatus, newStatus });
-		}
-	}
-
-	revalidatePath(`/projects/${task.projectId}`);
-}
-
-export async function updateTaskDetails(taskId: string, formData: FormData) {
-	const session = await getSession();
-	if (!session?.user) {
-		throw new Error("Unauthorized");
-	}
-
-	const task = await prisma.task.findUnique({
-		where: { id: taskId },
-		select: {
-			id: true,
-			authorId: true,
-			projectId: true,
-			project: {
-				select: { ownerId: true },
-			},
-		},
-	});
-	if (!task) throw new Error("Task not found");
-
-	if (session.user.role !== "DEVELOPER" && task.authorId !== session.user.id && task.project.ownerId !== session.user.id) {
-		throw new Error("Unauthorized");
-	}
-
-	const title = formData.get("title") as string;
-	const description = formData.get("description") as string;
-
-	await prisma.task.update({
-		where: { id: taskId },
-		data: {
-			title,
-			description,
-		},
-	});
-
-	revalidatePath(`/projects/${task.projectId}`);
-}
-
-export async function getTaskDetails(taskId: string) {
-	const session = await getSession();
-	const userId = session?.user?.id;
-	const [task, voteCount] = await Promise.all([
-		prisma.task.findUnique({
-			where: { id: taskId },
+		const tasks = await prisma.task.findMany({
+			where: { projectId, status },
 			select: {
 				id: true,
 				title: true,
@@ -264,36 +36,301 @@ export async function getTaskDetails(taskId: string) {
 					select: { id: true, name: true, email: true, image: true },
 				},
 				labels: true,
-				project: {
-					select: { ownerId: true },
-				},
-				reactions: {
-					select: {
-						id: true,
-						emoji: true,
-						taskId: true,
-						userId: true,
-						createdAt: true,
-						user: {
-							select: { id: true, name: true, image: true },
-						},
-					},
-				},
 				votes: {
-					where: { userId: userId ?? "undefined" },
+					where: { userId: userId ?? "undefined", status },
 					select: { id: true },
 				},
 			},
-		}),
-		prisma.vote.count({
-			where: { taskId },
-		}),
-	]);
+			orderBy: { index: "asc" },
+			take: ITEMS_PER_PAGE,
+			skip,
+		});
 
-	if (!task) return null;
+		const taskIds = tasks.map((t) => t.id);
 
-	return {
-		...task,
-		_count: { votes: voteCount },
-	};
+		if (taskIds.length === 0) {
+			return [];
+		}
+
+		const [voteCounts, commentCounts] = await Promise.all([
+			prisma.vote.groupBy({
+				by: ["taskId"],
+				where: { taskId: { in: taskIds } },
+				_count: true,
+			}),
+			prisma.comment.groupBy({
+				by: ["taskId"],
+				where: { taskId: { in: taskIds } },
+				_count: true,
+			}),
+		]);
+
+		const voteMap = Object.fromEntries(voteCounts.map((v) => [v.taskId, v._count]));
+		const commentMap = Object.fromEntries(commentCounts.map((c) => [c.taskId, c._count]));
+
+		return tasks.map((t) => ({
+			...t,
+			_count: {
+				votes: voteMap[t.id] ?? 0,
+				comments: commentMap[t.id] ?? 0,
+			},
+		}));
+	} catch (error) {
+		logServerError("getTasks", error, { projectId, status, page });
+		throw new Error(formatErrorMessage(error, "Failed to fetch tasks"));
+	}
+}
+
+export async function createTask(projectId: string, formData: FormData) {
+	try {
+		const session = await getSession();
+		if (!session?.user) {
+			throw new Error("Unauthorized: Please sign in to create a task");
+		}
+
+		const title = (formData.get("title") as string)?.trim();
+		const description = (formData.get("description") as string)?.trim();
+		const labelIds = formData.getAll("labels") as string[];
+
+		if (!title) {
+			throw new Error("Title is required");
+		}
+
+		const [minIndexTask, project] = await Promise.all([
+			prisma.task.findFirst({
+				where: { projectId, status: TaskStatus.PENDING_SUGGESTION },
+				orderBy: { index: "asc" },
+				select: { index: true },
+			}),
+			prisma.project.findUniqueOrThrow({
+				where: { id: projectId },
+				select: { id: true, name: true, owner: { select: { email: true } } },
+			}),
+		]);
+
+		const newIndex = minIndexTask && !isNaN(minIndexTask.index) ? minIndexTask.index / 2 : 1000;
+
+		const task = await prisma.task.create({
+			data: {
+				title,
+				description: description || null,
+				projectId,
+				authorId: session.user.id,
+				status: TaskStatus.PENDING_SUGGESTION,
+				index: newIndex,
+				labels: {
+					connect: labelIds.map((id) => ({ id })),
+				},
+			},
+			select: {
+				id: true,
+				title: true,
+				description: true,
+				status: true,
+				index: true,
+				projectId: true,
+				authorId: true,
+				createdAt: true,
+				updatedAt: true,
+				author: {
+					select: { id: true, name: true, email: true, image: true },
+				},
+			},
+		});
+
+		try {
+			await eventPublisher.publish("TaskCreated", { taskId: task.id, title: task.title });
+		} catch (eventError) {
+			logServerError("TaskCreatedEvent", eventError, { taskId: task.id });
+		}
+
+		try {
+			const emailsToSend: Set<string> = new Set();
+			if (project.owner.email) emailsToSend.add(project.owner.email);
+			if (session.user.email) emailsToSend.add(session.user.email);
+			if (task.author.email) emailsToSend.add(task.author.email);
+
+			if (emailsToSend.size > 0 && env.RESEND_API_KEY) {
+				await resend.emails.send({
+					from: env.EMAIL_FROM,
+					to: [...emailsToSend],
+					subject: `New Task: ${task.title}`,
+					react: TaskCreatedEmail({
+						authorName: session.user.name || "A user",
+						taskTitle: task.title,
+						taskDescription: task.description || "",
+						taskUrl: `${env.APP_URL}/projects/${projectId}?taskId=${task.id}`,
+						projectName: project.name,
+					}),
+				});
+			}
+		} catch (emailError) {
+			logServerError("TaskCreatedEmail", emailError, { taskId: task.id });
+		}
+
+		revalidatePath(`/projects/${projectId}`);
+		return task;
+	} catch (error) {
+		logServerError("createTask", error, { projectId });
+		throw new Error(formatErrorMessage(error, "Failed to create task"));
+	}
+}
+
+export async function updateTaskStatus(taskId: string, newStatus: TaskStatus, newIndex: number) {
+	try {
+		const session = await getSession();
+
+		const task = await prisma.task.findUnique({
+			where: { id: taskId },
+			select: {
+				id: true,
+				status: true,
+				index: true,
+				projectId: true,
+				project: {
+					select: { ownerId: true },
+				},
+			},
+		});
+
+		if (!task) {
+			throw new Error("Task not found");
+		}
+
+		if (!session?.user || (session.user.role !== "DEVELOPER" && task.project.ownerId !== session.user.id)) {
+			throw new Error("Unauthorized: Only project owners or developers can move tasks");
+		}
+
+		const oldStatus = task.status;
+		const oldIndex = task.index;
+
+		if (oldStatus !== newStatus || oldIndex !== newIndex) {
+			const safeIndex = typeof newIndex === "number" && !isNaN(newIndex) ? newIndex : oldIndex || 1000;
+			await prisma.task.update({
+				where: { id: taskId },
+				data: {
+					status: newStatus,
+					index: safeIndex,
+				},
+			});
+
+			if (oldStatus !== newStatus) {
+				try {
+					await eventPublisher.publish("TaskStatusChanged", { taskId, oldStatus, newStatus });
+				} catch (eventError) {
+					logServerError("TaskStatusChangedEvent", eventError, { taskId });
+				}
+			}
+		}
+
+		revalidatePath(`/projects/${task.projectId}`);
+	} catch (error) {
+		logServerError("updateTaskStatus", error, { taskId, newStatus, newIndex });
+		throw new Error(formatErrorMessage(error, "Failed to move task"));
+	}
+}
+
+export async function updateTaskDetails(taskId: string, formData: FormData) {
+	try {
+		const session = await getSession();
+		if (!session?.user) {
+			throw new Error("Unauthorized: Please sign in");
+		}
+
+		const task = await prisma.task.findUnique({
+			where: { id: taskId },
+			select: {
+				id: true,
+				authorId: true,
+				projectId: true,
+				project: {
+					select: { ownerId: true },
+				},
+			},
+		});
+		if (!task) throw new Error("Task not found");
+
+		if (session.user.role !== "DEVELOPER" && task.authorId !== session.user.id && task.project.ownerId !== session.user.id) {
+			throw new Error("Unauthorized: You do not have permission to edit this task");
+		}
+
+		const title = (formData.get("title") as string)?.trim();
+		const description = (formData.get("description") as string)?.trim();
+
+		if (!title) {
+			throw new Error("Title is required");
+		}
+
+		await prisma.task.update({
+			where: { id: taskId },
+			data: {
+				title,
+				description: description || null,
+			},
+		});
+
+		revalidatePath(`/projects/${task.projectId}`);
+	} catch (error) {
+		logServerError("updateTaskDetails", error, { taskId });
+		throw new Error(formatErrorMessage(error, "Failed to update task"));
+	}
+}
+
+export async function getTaskDetails(taskId: string) {
+	try {
+		const session = await getSession();
+		const userId = session?.user?.id;
+		const [task, voteCount] = await Promise.all([
+			prisma.task.findUnique({
+				where: { id: taskId },
+				select: {
+					id: true,
+					title: true,
+					description: true,
+					status: true,
+					index: true,
+					projectId: true,
+					authorId: true,
+					createdAt: true,
+					updatedAt: true,
+					author: {
+						select: { id: true, name: true, email: true, image: true },
+					},
+					labels: true,
+					project: {
+						select: { ownerId: true },
+					},
+					reactions: {
+						select: {
+							id: true,
+							emoji: true,
+							taskId: true,
+							userId: true,
+							createdAt: true,
+							user: {
+								select: { id: true, name: true, image: true },
+							},
+						},
+					},
+					votes: {
+						where: { userId: userId ?? "undefined" },
+						select: { id: true },
+					},
+				},
+			}),
+			prisma.vote.count({
+				where: { taskId },
+			}),
+		]);
+
+		if (!task) return null;
+
+		return {
+			...task,
+			_count: { votes: voteCount },
+		};
+	} catch (error) {
+		logServerError("getTaskDetails", error, { taskId });
+		throw new Error(formatErrorMessage(error, "Failed to load task details"));
+	}
 }

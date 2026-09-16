@@ -3,6 +3,8 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import prisma from "@/lib/prisma";
 import { getAuthEnvOrThrow } from "@/lib/env";
 import { headers } from "next/headers";
+import { logServerError } from "@/lib/logger";
+import { Role } from "@/types";
 
 const authEnv = getAuthEnvOrThrow();
 
@@ -12,6 +14,12 @@ export const auth = betterAuth({
 	}),
 	baseURL: authEnv.BETTER_AUTH_URL,
 	basePath: "/api/v1",
+	trustedOrigins: [
+		authEnv.BETTER_AUTH_URL,
+		"https://yourchoice.smme.workers.dev",
+		"http://localhost:3000",
+		"http://localhost:3001",
+	].filter(Boolean),
 	socialProviders: {
 		google: {
 			clientId: authEnv.AUTH_GOOGLE_ID,
@@ -30,16 +38,22 @@ export const auth = betterAuth({
 });
 
 export async function getSession() {
-	const session = await auth.api.getSession({
-		headers: await headers(),
-	});
-	if (!session) return null;
-	return {
-		user: {
-			...session.user,
-			id: session.user.id,
-			role: session.user.role as any,
-		},
-		session: session.session,
-	};
+	try {
+		const headerList = await headers();
+		const session = await auth.api.getSession({
+			headers: headerList,
+		});
+		if (!session) return null;
+		return {
+			user: {
+				...session.user,
+				id: session.user.id,
+				role: session.user.role as Role,
+			},
+			session: session.session,
+		};
+	} catch (error) {
+		logServerError("getSession", error);
+		return null;
+	}
 }

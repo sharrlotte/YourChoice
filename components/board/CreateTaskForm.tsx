@@ -10,8 +10,8 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
-import type { Label } from "@/types";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { Label, TaskWithRelations } from "@/types";
+import { InfiniteData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Plus, X } from "lucide-react";
 import { signIn, useSession } from "@/lib/auth-client";
 import { useState } from "react";
@@ -66,13 +66,13 @@ export function CreateTaskForm({ projectId, canManageLabels }: { projectId: stri
 				updatedAt: new Date(),
 			};
 
-			queryClient.setQueryData(["tasks", projectId, "PENDING_SUGGESTION", "index"], (oldData: any) => {
-				if (!oldData) return { pages: [[newTask]], pageParams: [1] };
+			queryClient.setQueryData<InfiniteData<TaskWithRelations[]>>(["tasks", projectId, "PENDING_SUGGESTION", "index"], (oldData) => {
+				if (!oldData) return { pages: [[newTask as unknown as TaskWithRelations]], pageParams: [1] };
 				const newPages = [...oldData.pages];
 				if (newPages.length > 0) {
-					newPages[0] = [newTask, ...newPages[0]];
+					newPages[0] = [newTask as unknown as TaskWithRelations, ...newPages[0]];
 				} else {
-					newPages.push([newTask]);
+					newPages.push([newTask as unknown as TaskWithRelations]);
 				}
 				return { ...oldData, pages: newPages };
 			});

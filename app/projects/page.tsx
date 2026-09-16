@@ -11,7 +11,7 @@ export default async function ProjectsPage() {
 	const session = await getSession();
 	const projects = await getProjectsSimple();
 
-	const isDeveloper = (session?.user?.role as any) === Role.DEVELOPER;
+	const isDeveloper = session?.user?.role === Role.DEVELOPER;
 
 	return (
 		<div className="h-screen overflow-y-scroll no-scrollbar bg-background">

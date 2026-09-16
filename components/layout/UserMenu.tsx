@@ -26,7 +26,7 @@ export function UserMenu() {
 
 	if (!session?.user) return null;
 
-	const isDeveloper = (session.user as any).role === "DEVELOPER";
+	const isDeveloper = (session.user as { role?: string }).role === "DEVELOPER";
 
 	return (
 		<DropdownMenu>
@@ -44,7 +44,7 @@ export function UserMenu() {
 						<p className="text-sm font-medium leading-none">{session.user.name}</p>
 						<p className="text-xs leading-none text-muted-foreground">{session.user.email}</p>
 						<p className="text-[10px] leading-none text-primary font-semibold mt-1 uppercase bg-muted/50 w-fit py-0.5 rounded">
-							{(session.user as any).role}
+							{(session.user as { role?: string }).role}
 						</p>
 					</div>
 				</DropdownMenuLabel>

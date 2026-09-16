@@ -18,6 +18,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Pencil, X } from "lucide-react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
+import { Role } from "@/types";
 
 interface TaskDetailsProps {
 	taskId: string;
@@ -41,7 +42,7 @@ export function TaskDetails({ taskId, onClose }: TaskDetailsProps) {
 
     useTaskComments(taskId);
 
-	const isDeveloper = (session?.user as any)?.role === "DEVELOPER";
+	const isDeveloper = (session?.user as { role?: string } | undefined)?.role === Role.DEVELOPER;
 	const isProjectOwner = task?.project?.ownerId === session?.user?.id;
 	const isTaskOwner = task?.authorId === session?.user?.id;
 	const canManageLabels = isDeveloper || isProjectOwner || isTaskOwner;

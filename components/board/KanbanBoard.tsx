@@ -65,7 +65,7 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 
 			const taskToMove: TaskWithRelations | null = movedTask;
 			if (taskToMove) {
-				const updatedTask: TaskWithRelations = { ...taskToMove, status, index };
+				const updatedTask: TaskWithRelations = Object.assign({}, taskToMove, { status, index });
 
 				queryClient.setQueryData<InfiniteData<TaskWithRelations[]>>(["tasks", projectId, status, "index"], (oldData) => {
 					if (!oldData || !Array.isArray(oldData.pages) || oldData.pages.length === 0) {
