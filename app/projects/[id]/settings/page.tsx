@@ -4,33 +4,52 @@ import { notFound, redirect } from "next/navigation";
 import { SettingsView } from "./view";
 import { Metadata } from "next";
 
+import { logServerError } from "@/lib/logger";
+
 interface PageProps {
 	params: Promise<{ id: string }>;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-	const { id } = await params;
-	const project = await prisma.project.findUnique({
-		where: { id },
-		select: { name: true },
-	});
+	try {
+		const { id } = await params;
+		const project = await prisma.project.findUnique({
+			where: { id },
+			select: { name: true },
+		});
 
-	return {
-		title: project ? `${project.name} - Settings` : "Project Settings",
-	};
+		return {
+			title: project ? `${project.name} - Settings` : "Project Settings",
+		};
+	} catch (error) {
+		logServerError("ProjectSettingsPage.generateMetadata", error);
+		return {
+			title: "Project Settings",
+		};
+	}
 }
 
 export default async function ProjectSettingsPage({ params }: PageProps) {
 	const { id } = await params;
-	const session = await getSession();
+	let session = null;
+	try {
+		session = await getSession();
+	} catch (error) {
+		logServerError("ProjectSettingsPage.getSession", error);
+	}
 
 	if (!session) {
 		redirect("/");
 	}
 
-	const project = await prisma.project.findUnique({
-		where: { id },
-	});
+	let project = null;
+	try {
+		project = await prisma.project.findUnique({
+			where: { id },
+		});
+	} catch (error) {
+		logServerError("ProjectSettingsPage.findUnique", error, { id });
+	}
 
 	if (!project) {
 		notFound();

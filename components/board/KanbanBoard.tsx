@@ -99,7 +99,7 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 					queryClient.setQueryData(queryKey, data);
 				});
 			}
-			toast.error("Failed to move task");
+			toast.error(err instanceof Error ? err.message : "Failed to move task");
 		},
 		onSettled: () => {
 			queryClient.invalidateQueries({ queryKey: ["tasks", projectId] });

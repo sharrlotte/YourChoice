@@ -29,7 +29,8 @@ export function CreateProjectDialog() {
 				toast.success("Project created successfully");
 				setOpen(false);
 			} catch (error) {
-				toast.error("Failed to create project");
+				const message = error instanceof Error ? error.message : "Failed to create project";
+				toast.error(message);
 			}
 		});
 	};

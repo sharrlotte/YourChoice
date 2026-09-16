@@ -7,9 +7,23 @@ import { Role } from "@/app/generated/prisma";
 import Link from "next/link";
 import { Footer } from "@/components/layout/Footer";
 
+import { logServerError } from "@/lib/logger";
+
 export default async function ProjectsPage() {
-	const session = await getSession();
-	const projects = await getProjectsSimple();
+	let session = null;
+	let projects: Awaited<ReturnType<typeof getProjectsSimple>> = [];
+
+	try {
+		session = await getSession();
+	} catch (error) {
+		logServerError("ProjectsPage.getSession", error);
+	}
+
+	try {
+		projects = await getProjectsSimple();
+	} catch (error) {
+		logServerError("ProjectsPage.getProjectsSimple", error);
+	}
 
 	const isDeveloper = session?.user?.role === Role.DEVELOPER;
 

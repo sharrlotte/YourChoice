@@ -11,38 +11,57 @@ import { Metadata } from "next";
 import { Footer } from "@/components/layout/Footer";
 import Link from "next/link";
 
+import { logServerError } from "@/lib/logger";
+
 export async function generateMetadata(props: PageProps<"/projects/[id]">): Promise<Metadata> {
-	const { id } = await props.params;
+	try {
+		const { id } = await props.params;
 
-	const project = await prisma.project.findUnique({
-		where: { id },
-	});
+		const project = await prisma.project.findUnique({
+			where: { id },
+		});
 
-	if (!project) {
+		if (!project) {
+			return {
+				title: "Project Not Found",
+			};
+		}
+
 		return {
-			title: "Project Not Found",
+			title: project.name,
+			description: project.description,
+			openGraph: {
+				title: project.name,
+				description: project.description ?? undefined,
+				type: "website",
+			},
+		};
+	} catch (error) {
+		logServerError("ProjectPage.generateMetadata", error);
+		return {
+			title: "Project",
 		};
 	}
-
-	return {
-		title: project.name,
-		description: project.description,
-		openGraph: {
-			title: project.name,
-			description: project.description ?? undefined,
-			type: "website",
-		},
-	};
 }
 
 export default async function ProjectPage(props: PageProps<"/projects/[id]">) {
 	const { id } = await props.params;
 
-	const session = await getSession();
+	let session = null;
+	try {
+		session = await getSession();
+	} catch (error) {
+		logServerError("ProjectPage.getSession", error);
+	}
 
-	const project = await prisma.project.findUnique({
-		where: { id },
-	});
+	let project = null;
+	try {
+		project = await prisma.project.findUnique({
+			where: { id },
+		});
+	} catch (error) {
+		logServerError("ProjectPage.findUnique", error, { id });
+	}
 
 	if (!project) {
 		notFound();

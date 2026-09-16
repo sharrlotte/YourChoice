@@ -57,7 +57,7 @@ export function VoteButton({ taskId, initialVotes, initialHasVoted, taskStatus }
 				setHasVoted(!newHasVoted);
 				setVotes((prev) => (!newHasVoted ? prev + 1 : prev - 1));
 				console.error("Failed to vote:", error);
-				toast.error("Failed to vote");
+				toast.error(error instanceof Error ? error.message : "Failed to vote");
 			}
 		});
 	};

@@ -18,8 +18,22 @@ function isRedirectError(error: unknown) {
 }
 
 export default async function Home() {
-	const session = await getSession();
-	const projects = await getProjects();
+	let session = null;
+	let projects: Awaited<ReturnType<typeof getProjects>> = [];
+	let loadError: string | null = null;
+
+	try {
+		session = await getSession();
+	} catch (error) {
+		logServerError("Home.getSession", error);
+	}
+
+	try {
+		projects = await getProjects();
+	} catch (error) {
+		logServerError("Home.getProjects", error);
+		loadError = "Unable to connect to the database. Please try refreshing in a moment.";
+	}
 
 	return (
 		<div className="h-screen overflow-y-scroll no-scrollbar bg-background">
@@ -52,11 +66,18 @@ export default async function Home() {
 						{session?.user && <CreateProjectDialog />}
 					</div>
 
+					{loadError && (
+						<div className="mb-6 rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
+							<p className="font-semibold">Connection Notice</p>
+							<p className="mt-1">{loadError}</p>
+						</div>
+					)}
+
 					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 						{projects.map((project) => (
 							<ProjectCard key={project.id} project={project} currentUserId={session?.user?.id} />
 						))}
-						{projects.length === 0 && (
+						{!loadError && projects.length === 0 && (
 							<div className="col-span-full text-center py-12 bg-muted/20 rounded-lg border border-dashed">
 								<h3 className="text-lg font-semibold text-foreground">No projects yet</h3>
 								<p className="text-muted-foreground mb-4">Be the first to create a project!</p>

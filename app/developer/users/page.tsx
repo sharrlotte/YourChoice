@@ -13,6 +13,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+import { logServerError } from "@/lib/logger";
+
 export default async function UsersPage({
   searchParams,
 }: {
@@ -20,11 +22,38 @@ export default async function UsersPage({
 }) {
   const params = await searchParams;
   const page = Number(params.page) || 1;
-  const { users, totalPages, currentPage } = await getUsers(page);
-  const stats = await getUserStats();
+
+  let usersData: Awaited<ReturnType<typeof getUsers>> = {
+    users: [],
+    total: 0,
+    totalPages: 1,
+    currentPage: page,
+  };
+  let stats: Awaited<ReturnType<typeof getUserStats>> = [];
+  let fetchError: string | null = null;
+
+  try {
+    const [fetchedUsers, fetchedStats] = await Promise.all([
+      getUsers(page),
+      getUserStats(),
+    ]);
+    usersData = fetchedUsers;
+    stats = fetchedStats;
+  } catch (error) {
+    logServerError("UsersPage.dataFetch", error);
+    fetchError = error instanceof Error ? error.message : "Failed to load developer dashboard data.";
+  }
+
+  const { users, totalPages, currentPage } = usersData;
 
   return (
     <div className="space-y-8">
+      {fetchError && (
+        <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
+          <p className="font-semibold">Access Notice</p>
+          <p className="mt-1">{fetchError}</p>
+        </div>
+      )}
       <div className="rounded-xl border bg-card text-card-foreground shadow">
         <div className="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
           <h3 className="tracking-tight text-sm font-medium">New Users Trend</h3>

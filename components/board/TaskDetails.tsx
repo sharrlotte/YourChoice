@@ -61,7 +61,7 @@ export function TaskDetails({ taskId, onClose }: TaskDetailsProps) {
 				queryClient.invalidateQueries({ queryKey: ["task", taskId] });
 				queryClient.invalidateQueries({ queryKey: ["tasks", task.projectId] });
 			} catch (error) {
-				toast.error("Failed to update task");
+				toast.error(error instanceof Error ? error.message : "Failed to update task");
 			}
 		});
 	};

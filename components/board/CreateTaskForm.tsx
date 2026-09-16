@@ -82,7 +82,7 @@ export function CreateTaskForm({ projectId, canManageLabels }: { projectId: stri
 		onError: (err, newTodo, context) => {
 			queryClient.setQueryData(["tasks", projectId, "PENDING_SUGGESTION", "index"], context?.previousTasks);
 			console.error("Failed to create task:", err);
-			toast.error("Failed to create task");
+			toast.error(err instanceof Error ? err.message : "Failed to create task");
 		},
 		onSuccess: () => {
 			setIsOpen(false);

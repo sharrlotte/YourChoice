@@ -98,7 +98,7 @@ export function CommentSection({ taskId }: CommentSectionProps) {
 				toast.success("Comment posted");
 			} catch (error) {
 				console.error("Failed to add comment:", error);
-				toast.error("Failed to add comment");
+				toast.error(error instanceof Error ? error.message : "Failed to add comment");
 			}
 		});
 	};
