@@ -2,10 +2,10 @@
 
 import { updateTaskStatus } from "@/app/actions/tasks";
 import { KanbanColumn } from "@/components/board/KanbanColumn";
-import type { TaskStatus } from "@/types";
-import { DndContext, DragEndEvent, DragOverlay, DragOverEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import type { TaskStatus, TaskWithRelations } from "@/types";
+import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { InfiniteData, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
@@ -23,7 +23,7 @@ const columns: { status: TaskStatus; title: string }[] = [
 
 export function KanbanBoard({ projectId, canManageLabels }: { projectId: string; canManageLabels?: boolean }) {
 	const queryClient = useQueryClient();
-	const [activeTask, setActiveTask] = useState<any>(null);
+	const [activeTask, setActiveTask] = useState<TaskWithRelations | null>(null);
 	const [selectedTaskId, setSelectedTaskId] = useQueryState("taskId");
 	const [mounted, setMounted] = useState(false);
 
@@ -46,35 +46,48 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 		onMutate: async ({ taskId, status, index }) => {
 			await queryClient.cancelQueries({ queryKey: ["tasks", projectId] });
 
-			const previousTasks = queryClient.getQueriesData({ queryKey: ["tasks", projectId] });
+			const previousTasks = queryClient.getQueriesData<InfiniteData<TaskWithRelations[]>>({ queryKey: ["tasks", projectId] });
 
-			let movedTask: any = null;
+			let movedTask: TaskWithRelations | null = null;
 
-			queryClient.setQueriesData({ queryKey: ["tasks", projectId] }, (oldData: any) => {
-				if (!oldData || !oldData.pages) return oldData;
+			queryClient.setQueriesData<InfiniteData<TaskWithRelations[]>>({ queryKey: ["tasks", projectId] }, (oldData) => {
+				if (!oldData || !Array.isArray(oldData.pages)) return oldData;
 
-				const newPages = oldData.pages.map((page: any[]) => {
-					const found = page.find((t) => t.id === taskId);
+				const newPages = oldData.pages.map((page) => {
+					if (!Array.isArray(page)) return page;
+					const found = page.find((t) => t?.id === taskId);
 					if (found) movedTask = found;
-					return page.filter((t) => t.id !== taskId);
+					return page.filter((t) => t?.id !== taskId);
 				});
 
 				return { ...oldData, pages: newPages };
 			});
 
-			if (movedTask) {
-				const updatedTask = { ...movedTask, status: status, index: index };
+			const taskToMove: TaskWithRelations | null = movedTask;
+			if (taskToMove) {
+				const updatedTask: TaskWithRelations = { ...taskToMove, status, index };
 
-				queryClient.setQueryData(["tasks", projectId, status, "index"], (oldData: any) => {
-					if (!oldData) {
+				queryClient.setQueryData<InfiniteData<TaskWithRelations[]>>(["tasks", projectId, status, "index"], (oldData) => {
+					if (!oldData || !Array.isArray(oldData.pages) || oldData.pages.length === 0) {
 						return { pages: [[updatedTask]], pageParams: [1] };
 					}
 
-					const allTasks = oldData.pages.flatMap((page: any[]) => page);
-					allTasks.push(updatedTask);
-					allTasks.sort((a: any, b: any) => a.index - b.index);
+					const existingTasks = oldData.pages
+						.flatMap((page) => (Array.isArray(page) ? page : []))
+						.filter((t) => t?.id !== taskId && Boolean(t));
 
-					return { ...oldData, pages: [allTasks] };
+					const allTasks = [...existingTasks, updatedTask].sort((a, b) => (a?.index ?? 0) - (b?.index ?? 0));
+
+					const pageSizes = oldData.pages.map((p) => (Array.isArray(p) ? p.length : 10));
+					let offset = 0;
+					const newPages = pageSizes.map((size: number, idx: number) => {
+						const count = idx === pageSizes.length - 1 ? allTasks.length - offset : Math.max(1, size);
+						const slice = allTasks.slice(offset, offset + count);
+						offset += count;
+						return slice;
+					});
+
+					return { ...oldData, pages: newPages };
 				});
 			}
 
@@ -93,159 +106,121 @@ export function KanbanBoard({ projectId, canManageLabels }: { projectId: string;
 		},
 	});
 
-	const handleDragStart = (event: any) => {
-		setActiveTask(event.active.data.current?.task);
-	};
-
-	const handleDragOver = (event: DragOverEvent) => {
-		const { active, over } = event;
-		if (!over) return;
-
-		const activeId = active.id;
-		const overId = over.id;
-
-		const activeData = active.data.current;
-		const overData = over.data.current;
-
-		if (!activeData || !overData) return;
-
-		const activeTask = activeData.task;
-		const overTask = overData.task;
-
-		if (!activeTask) return;
-
-		const activeStatus = activeTask.status;
-		let overStatus = overTask ? overTask.status : null;
-
-		if (!overStatus) {
-			const isOverColumn = columns.some((col) => col.status === overId);
-			if (isOverColumn) {
-				overStatus = overId as TaskStatus;
-			}
-		}
-
-		if (!activeStatus || !overStatus || activeStatus === overStatus) {
-			return;
-		}
-
-		const sourceKey = ["tasks", projectId, activeStatus, "index"];
-		const destKey = ["tasks", projectId, overStatus, "index"];
-
-		let movedTask: any = null;
-
-		queryClient.setQueryData(sourceKey, (oldData: any) => {
-			if (!oldData || !oldData.pages) return oldData;
-			const newPages = oldData.pages.map((page: any[]) => {
-				const found = page.find((t) => t.id === activeId);
-				if (found) movedTask = found;
-				return page.filter((t) => t.id !== activeId);
-			});
-			return { ...oldData, pages: newPages };
-		});
-
-		if (movedTask) {
-			const updatedTask = { ...movedTask, status: overStatus };
-
-			queryClient.setQueryData(destKey, (oldData: any) => {
-				if (!oldData) {
-					return { pages: [[updatedTask]], pageParams: [1] };
-				}
-
-				const newPages = [...oldData.pages];
-				const allTasks = newPages.flatMap((p) => p);
-
-				const overIndex = over.data.current?.sortable?.index;
-
-				if (typeof overIndex === "number") {
-					allTasks.splice(overIndex, 0, updatedTask);
-				} else {
-					allTasks.push(updatedTask);
-				}
-
-				return { ...oldData, pages: [allTasks] };
-			});
+	const handleDragStart = (event: DragStartEvent) => {
+		const task = event.active.data.current?.task as TaskWithRelations | undefined;
+		if (task) {
+			setActiveTask(task);
 		}
 	};
 
 	const handleDragEnd = (event: DragEndEvent) => {
 		const { active, over } = event;
+		setActiveTask(null);
 
 		if (!over) {
-			setActiveTask(null);
 			toast.warning("Please drop the task in a column");
 			return;
 		}
 
-		const activeTask = active.data.current?.task;
+		const activeTask = active.data.current?.task as TaskWithRelations | undefined;
 		if (!activeTask) {
-			setActiveTask(null);
 			toast.warning("No active task to move");
 			return;
 		}
 
-		const activeId = active.id as string;
-		const overId = over.id as string;
+		const activeId = String(active.id);
+		const overId = String(over.id);
 
-		let newStatus = activeTask.status;
+		let newStatus: TaskStatus = activeTask.status;
 
 		const isOverColumn = columns.some((col) => col.status === overId);
 
 		if (isOverColumn) {
 			newStatus = overId as TaskStatus;
 		} else {
-			const overTask = over.data.current?.task;
-			if (overTask) {
+			const overTask = over.data.current?.task as TaskWithRelations | undefined;
+			if (overTask?.status) {
 				newStatus = overTask.status;
+			} else {
+				// Fallback: search query cache to identify which column contains overId
+				for (const col of columns) {
+					const colData = queryClient.getQueryData<InfiniteData<TaskWithRelations[]>>(["tasks", projectId, col.status, "index"]);
+					const colTasks = colData?.pages?.flatMap((p) => (Array.isArray(p) ? p : [])) || [];
+					if (colTasks.some((t) => t?.id === overId)) {
+						newStatus = col.status;
+						break;
+					}
+				}
 			}
 		}
 
+		// Retrieve tasks for destination column from query cache
 		const queryKey = ["tasks", projectId, newStatus, "index"];
-		const data = queryClient.getQueryData(queryKey) as any;
-		const tasks = data?.pages.flatMap((p: any) => p) || [];
+		const data = queryClient.getQueryData<InfiniteData<TaskWithRelations[]>>(queryKey);
+		const rawTasks = data?.pages?.flatMap((p) => (Array.isArray(p) ? p : []))?.filter(Boolean) || [];
+		const tasks: TaskWithRelations[] = Array.from(new Map(rawTasks.map((t) => [t.id, t])).values());
 
 		let newIndex = activeTask.index;
 
-		if (activeTask.status !== newStatus && isOverColumn) {
-			const lastItem = tasks[tasks.length - 1];
-			newIndex = lastItem ? lastItem.index + 1000 : 1000;
-		} else {
-			const overData = over.data.current;
-			const overIndex = overData?.sortable?.index;
-			const activeIndex = active.data.current?.sortable?.index;
-
-			if (typeof overIndex === "number") {
-				let newTasks = [...tasks];
-
-				if (activeTask.status === newStatus && typeof activeIndex === "number") {
-					newTasks = arrayMove(newTasks, activeIndex, overIndex);
-
-					const prev = newTasks[overIndex - 1];
-					const next = newTasks[overIndex + 1];
-
-					if (!prev) newIndex = next ? next.index / 2 : 1000;
-					else if (!next) newIndex = prev.index + 1000;
-					else newIndex = (prev.index + next.index) / 2;
+		if (activeTask.status !== newStatus) {
+			if (isOverColumn) {
+				const lastItem = tasks[tasks.length - 1];
+				newIndex = lastItem && typeof lastItem.index === "number" ? lastItem.index + 1000 : 1000;
+			} else {
+				const overTaskIndex = tasks.findIndex((t) => t.id === overId);
+				if (overTaskIndex >= 0) {
+					const prev = tasks[overTaskIndex - 1];
+					const curr = tasks[overTaskIndex];
+					if (!prev) {
+						newIndex = curr && typeof curr.index === "number" ? (curr.index > 0 ? curr.index / 2 : curr.index - 1000) : 1000;
+					} else {
+						const prevIdx = typeof prev.index === "number" ? prev.index : 0;
+						const currIdx = typeof curr.index === "number" ? curr.index : prevIdx + 1000;
+						newIndex = prevIdx < currIdx ? (prevIdx + currIdx) / 2 : currIdx - 0.5;
+					}
 				} else {
-					const prev = tasks[overIndex - 1];
-					const next = tasks[overIndex];
-
-					if (!prev) newIndex = next ? next.index / 2 : 1000;
-					else if (!next) newIndex = prev.index + 1000;
-					else newIndex = (prev.index + next.index) / 2;
+					const lastItem = tasks[tasks.length - 1];
+					newIndex = lastItem && typeof lastItem.index === "number" ? lastItem.index + 1000 : 1000;
 				}
 			}
+		} else {
+			// Reordering within the SAME column
+			if (!isOverColumn && activeId !== overId) {
+				const oldIndex = tasks.findIndex((t) => t.id === activeId);
+				const targetIndex = tasks.findIndex((t) => t.id === overId);
+
+				if (oldIndex >= 0 && targetIndex >= 0) {
+					const reordered = arrayMove(tasks, oldIndex, targetIndex);
+					const prev = reordered[targetIndex - 1];
+					const next = reordered[targetIndex + 1];
+
+					if (!prev && !next) {
+						newIndex = 1000;
+					} else if (!prev) {
+						newIndex = next && typeof next.index === "number" ? (next.index > 0 ? next.index / 2 : next.index - 1000) : 1000;
+					} else if (!next) {
+						newIndex = prev && typeof prev.index === "number" ? prev.index + 1000 : 1000;
+					} else {
+						const prevIdx = typeof prev.index === "number" ? prev.index : 0;
+						const nextIdx = typeof next.index === "number" ? next.index : prevIdx + 1000;
+						newIndex = prevIdx < nextIdx ? (prevIdx + nextIdx) / 2 : prevIdx + 0.5;
+					}
+				}
+			}
+		}
+
+		if (isNaN(newIndex) || typeof newIndex !== "number") {
+			newIndex = 1000;
 		}
 
 		if (activeTask.status !== newStatus || Math.abs(activeTask.index - newIndex) > 0.0001) {
 			updateStatusMutation.mutate({ taskId: activeId, status: newStatus, index: newIndex });
 		}
-
-		setActiveTask(null);
 	};
 
 	return (
 		<div className="flex flex-col h-full min-h-0 flex-1 overflow-hidden">
-			<DndContext sensors={sensors} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
+			<DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
 				<div className="flex h-full gap-3 overflow-x-auto py-4 w-full snap-x snap-mandatory">
 					{columns.map((col) => (
 						<KanbanColumn

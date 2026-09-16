@@ -63,7 +63,7 @@ export function TaskCard({ task, onClick, disabled }: TaskCardProps) {
 			<CardContent className="p-3 pt-2">
 				<p className="text-muted-foreground line-clamp-3 text-sm">{task.description}</p>
 				<div className="flex flex-wrap gap-1 mt-2">
-					{task.labels.map((label) => (
+					{task.labels?.map((label) => (
 						<Badge
 							key={label.id}
 							variant="secondary"
@@ -77,21 +77,21 @@ export function TaskCard({ task, onClick, disabled }: TaskCardProps) {
 			</CardContent>
 
 			<CardFooter className="p-3 pt-0 flex items-center justify-between text-xs text-muted-foreground">
-				<div className="flex items-center gap-2" title={`Created by ${task.author.name}`}>
+				<div className="flex items-center gap-2" title={`Created by ${task.author?.name || "Unknown"}`}>
 					<Avatar className="h-5 w-5">
-						<AvatarImage src={task.author.image || ""} alt={task.author.name || ""} />
-						<AvatarFallback className="text-[10px]">{task.author.name?.[0]?.toUpperCase() || "U"}</AvatarFallback>
+						<AvatarImage src={task.author?.image || ""} alt={task.author?.name || ""} />
+						<AvatarFallback className="text-[10px]">{task.author?.name?.[0]?.toUpperCase() || "U"}</AvatarFallback>
 					</Avatar>
-					<span className="text-[10px] truncate max-w-[180px] hidden sm:inline-block">{task.author.name}</span>
+					<span className="text-[10px] truncate max-w-[180px] hidden sm:inline-block">{task.author?.name || "Unknown"}</span>
 				</div>
 				<div className="flex items-center gap-3 ml-auto">
 					<div className={`flex items-center gap-1 ${task.votes?.length ? "text-white font-medium" : ""}`}>
 						<ThumbsUp size={12} className={task.votes?.length ? "fill-current" : ""} />
-						<span>{task._count.votes}</span>
+						<span>{task._count?.votes ?? 0}</span>
 					</div>
 					<div className="flex items-center gap-1">
 						<MessageSquare size={12} />
-						<span>{task._count.comments}</span>
+						<span>{task._count?.comments ?? 0}</span>
 					</div>
 				</div>
 			</CardFooter>

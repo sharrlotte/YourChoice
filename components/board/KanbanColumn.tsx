@@ -31,7 +31,7 @@ export function KanbanColumn({ projectId, status, title, onTaskClick, canManageL
 		},
 		getNextPageParam: (lastPage, allPages) => {
 			// Assuming page size is 10
-			return lastPage.length === 10 ? allPages.length + 1 : undefined;
+			return Array.isArray(lastPage) && lastPage.length === 10 ? allPages.length + 1 : undefined;
 		},
 		initialPageParam: 1,
 	});
@@ -46,7 +46,8 @@ export function KanbanColumn({ projectId, status, title, onTaskClick, canManageL
 		}
 	}, [inView, hasNextPage, fetchNextPage]);
 
-	const tasks = data?.pages.flatMap((page) => page) ?? [];
+	const rawTasks = data?.pages.flatMap((page) => (Array.isArray(page) ? page : [])).filter(Boolean) ?? [];
+	const tasks = Array.from(new Map(rawTasks.map((t) => [t.id, t])).values());
 
 	return (
 		<div className="flex flex-col bg-muted/50 rounded-lg w-full min-w-80 h-full border overflow-hidden snap-center shadow-md">

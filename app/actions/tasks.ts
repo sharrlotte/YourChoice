@@ -190,7 +190,7 @@ export async function updateTaskStatus(taskId: string, newStatus: TaskStatus, ne
 	const oldIndex = task.index;
 
 	if (oldStatus !== newStatus || oldIndex !== newIndex) {
-		const safeIndex = isNaN(newIndex) ? oldIndex || 1000 : newIndex;
+		const safeIndex = typeof newIndex === "number" && !isNaN(newIndex) ? newIndex : oldIndex || 1000;
 		await prisma.task.update({
 			where: { id: taskId },
 			data: {
@@ -198,18 +198,6 @@ export async function updateTaskStatus(taskId: string, newStatus: TaskStatus, ne
 				index: safeIndex,
 			},
 		});
-
-		await prisma.$executeRaw`
-			WITH ranked AS (
-				SELECT id, ROW_NUMBER() OVER (ORDER BY "index") as rn
-				FROM "Task"
-				WHERE "projectId" = ${task.projectId} AND "status" = ${newStatus}::"TaskStatus"
-			)
-			UPDATE "Task"
-			SET "index" = ranked.rn * 1000
-			FROM ranked
-			WHERE "Task".id = ranked.id
-		`;
 
 		if (oldStatus !== newStatus) {
 			await eventPublisher.publish("TaskStatusChanged", { taskId, oldStatus, newStatus });
